@@ -33,6 +33,11 @@ export async function getPropertyData(address1: any, address2: any) {
     }
 }
 
+//TODO
+export async function getExpandedPropertyData(attomId: any) {
+
+}
+
 export type SnapshotParams = {
   // Location options (choose ONE style in usage)
   latitude?: number;

@@ -4,8 +4,6 @@ import { getPropertyData, propertySearch } from '../modules/attom/attom.controll
 
 const prisma = new PrismaClient();
 
-
-
 async function clear() {
   try {
       await prisma.mockHouse.deleteMany({});
@@ -71,14 +69,13 @@ async function AttomToSupabaseTest() {
 
 async function mainTest() {
   //variables for each property field
+  var houseId = 0;
   var mainAddress = "";
   var lat = 0;
   var lon = 0;
   var neighborhoodValue = "";
-  var priority = 0;
   var visitDuration = 0;
   var statusCode = "";
-  var isCorner = false;
   var streetNameValue = "";
   var houseNum = 0;
   var count = 0;
@@ -99,28 +96,28 @@ async function mainTest() {
         //check if residence is single family
         if (property.summary.proptype == "SFR") {
           //assign values from attomData to variables
+          houseId = property.identifier.attomId;
           mainAddress = property.address.line1 + ", " + property.address.line2;
           lat = parseFloat(property.location.latitude);
           lon = parseFloat(property.location.longitude);
           neighborhoodValue = "Unknown";
-          priority = 1.0;
           visitDuration = 0;
           statusCode = "ACTIVE";
-          isCorner = false;
           streetNameValue = property.address.line1 || "Unknown";
           houseNum = 0;
+
+          ///TODO - run ExpandedPropertyData fetch to get property value
 
           //save data to supabase
           var propertySaved = await prisma.mockHouse.create({
             data: {
+              houseId: houseId,
               address: mainAddress,
               latitude: lat,
               longitude: lon,
               neighborhood: neighborhoodValue,
-              priorityScore: priority,
               visitDurationMinutes: visitDuration,
               status: statusCode,   // or just "ACTIVE" if you mapped it as string
-              isCornerHouse: isCorner,
               streetName: streetNameValue.replace(/\d+/g, '').trim(),
               houseNumber: houseNum,
             },
