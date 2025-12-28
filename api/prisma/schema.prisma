@@ -37,6 +37,7 @@ model MockHouse {
   visitDurationMinutes Int @default(0) //time visited in minutes
   status  String @default("ACTIVE") //ACTIVE, SKIIPPED, INVALID
   streetName String @default("Unknown Street") //street for clustering
+  propertyValue Float @default(0.0) //property value from ATTOM
   createdAt DateTime @default(now()) //timestamp
 }
 

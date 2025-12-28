@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client'
-import { getPropertyData, propertySearch } from '../modules/attom/attom.controller.ts';
+import { getPropertyData, propertySearch, getExpandedPropertyData} from '../modules/attom/attom.controller.ts';
 
 const prisma = new PrismaClient();
 
@@ -77,6 +77,7 @@ async function mainTest() {
   var visitDuration = 0;
   var statusCode = "";
   var streetNameValue = "";
+  var propertyVal = 0.0;
   var houseNum = 0;
   var count = 0;
 
@@ -100,14 +101,16 @@ async function mainTest() {
           mainAddress = property.address.line1 + ", " + property.address.line2;
           lat = parseFloat(property.location.latitude);
           lon = parseFloat(property.location.longitude);
-          neighborhoodValue = "Unknown";
+          neighborhoodValue = "Unknown"; //TODO
           visitDuration = 0;
           statusCode = "ACTIVE";
           streetNameValue = property.address.line1 || "Unknown";
           houseNum = 0;
 
           ///TODO - run ExpandedPropertyData fetch to get property value
-
+          const expandedData = await getExpandedPropertyData(property.address.line1, property.address.line2);
+          propertyVal = expandedData.property[0].assessment.market.mktTtlValue || 0.0;
+          neighborhoodValue = expandedData.property[0].area.subdName || "Unknown";
           //save data to supabase
           var propertySaved = await prisma.mockHouse.create({
             data: {
@@ -119,7 +122,7 @@ async function mainTest() {
               visitDurationMinutes: visitDuration,
               status: statusCode,   // or just "ACTIVE" if you mapped it as string
               streetName: streetNameValue.replace(/\d+/g, '').trim(),
-              houseNumber: houseNum,
+              propertyValue: propertyVal
             },
           });
           count++;

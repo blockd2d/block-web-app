@@ -34,8 +34,27 @@ export async function getPropertyData(address1: any, address2: any) {
 }
 
 //TODO
-export async function getExpandedPropertyData(attomId: any) {
+export async function getExpandedPropertyData(address1: any, address2: any) {
+  try {
+        const response = await axios.get(
+            `${baseURL}/propertyapi/v1.0.0/property/expandedprofile`,
+            {
+                params: {address1, address2},
+                headers: {
+                    accept: 'application/json',
+                    apikey: apiKey,
+                },
+            }
+        );
 
+        return response.data;
+    } catch (err) {
+        if (axios.isAxiosError(err)) {
+            console.error('ATTOM error:', err.response?.status, err.response?.data || err.message);
+        } else {
+            console.error('ATTOM error:', (err as Error).message ?? String(err));
+        }
+    }
 }
 
 export type SnapshotParams = {
