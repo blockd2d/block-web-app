@@ -17,7 +17,6 @@
     "csv-parse": "^6.1.0",
     "multer": "^2.0.2",
     "nanoid": "^5.1.6",
-    "next": "14.2.5",
     "okhttp": "^1.1.0",
     "react": "^18",
     "react-dom": "^18"
