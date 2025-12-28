@@ -20,7 +20,6 @@ async function AttomToSupabaseTest() {
   var lat = 0;
   var lon = 0;
   var neighborhoodValue = "";
-  var priority = 0;
   var visitDuration = 0;
   var statusCode = "";
   var isCorner = false;
@@ -35,7 +34,6 @@ async function AttomToSupabaseTest() {
   lat = parseFloat(attomData.property[0].location.latitude);
   lon = parseFloat(attomData.property[0].location.longitude);
   neighborhoodValue = attomData.property[0].area.subdname || "Unknown";
-  priority = 1.0;
   visitDuration = 0;
   statusCode = "ACTIVE";
   isCorner = false;
@@ -49,7 +47,6 @@ async function AttomToSupabaseTest() {
         latitude: lat,
         longitude: lon,
         neighborhood: neighborhoodValue,
-        priorityScore: priority,
         visitDurationMinutes: visitDuration,
         status: statusCode,   // or just "ACTIVE" if you mapped it as string
         isCornerHouse: isCorner,
