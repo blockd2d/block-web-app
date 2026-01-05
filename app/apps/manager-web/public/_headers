@@ -1,0 +1,6 @@
+/runtime-config.js
+  cache-control: no-store
+
+/*
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin

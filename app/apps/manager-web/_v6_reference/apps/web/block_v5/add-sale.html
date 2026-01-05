@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block - Add Sale</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="logo-text">Block</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item" data-page="home">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="sales-reps.html" class="nav-item" data-page="reps">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="nav-text">Sales Reps</span>
+                </a>
+                <a href="sales.html" class="nav-item active" data-page="sales">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <span class="nav-text">Sales Info</span>
+                </a>
+                <a href="cluster-creation.html" class="nav-item" data-page="cluster-creation">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="6"/>
+                        <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                    <span class="nav-text">Create Clusters</span>
+                </a>
+                <a href="cluster-assignment.html" class="nav-item" data-page="cluster-assignment">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="2 12 12 17 22 12"/>
+                    </svg>
+                    <span class="nav-text">Assign Clusters</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-content">
+                    <span class="version-text">v1.0.0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="btn-icon sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
+                    <h1 class="page-title">Add Sale</h1>
+                </div>
+                <div class="top-bar-right">
+                    <label class="btn btn-secondary import-btn">
+                        <svg class="btn-icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Import CSV
+                        <input type="file" id="csvImport" accept=".csv" hidden>
+                    </label>
+</div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content" id="pageContent">
+                <div class="form-page-layout">
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h2 class="card-title">Record New Sale</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="addSaleForm" class="form">
+                                <div class="form-group">
+                                    <label class="form-label required" for="repId">Sales Rep</label>
+                                    <select id="repId" class="form-input" required>
+                                        <option value="">Select a rep...</option>
+                                    </select>
+                                    <span class="form-hint">Who made this sale?</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label required" for="amount">Sale Amount ($)</label>
+                                    <input type="number" id="amount" class="form-input" required min="0" step="0.01" placeholder="0.00">
+                                    <span class="form-hint">Total sale value</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label required" for="date">Date</label>
+                                    <input type="date" id="date" class="form-input" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="clusterId">Cluster (Optional)</label>
+                                    <select id="clusterId" class="form-input">
+                                        <option value="">No cluster</option>
+                                    </select>
+                                    <span class="form-hint">Which territory was this sale in?</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="notes">Notes</label>
+                                    <textarea id="notes" class="form-input form-textarea" rows="4" placeholder="Add any notes about this sale..."></textarea>
+                                </div>
+
+                                <div class="form-actions">
+                                    <a href="sales.html" class="btn btn-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <svg class="btn-icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                            <polyline points="17 21 17 13 7 13 7 21"/>
+                                            <polyline points="7 3 7 8 15 8"/>
+                                        </svg>
+                                        Save Sale
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Modal Container -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle"></h3>
+                <button class="modal-close" id="modalClose" aria-label="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <span class="loading-text" id="loadingText">Loading...</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/map/projection.js"></script>
+    <script src="js/map/basemap.js"></script>
+    <script src="js/map/overlay.js"></script>
+    <script src="js/map/MapView.js"></script>
+    <script src="js/clustering/hull.js"></script>
+    <script src="js/clustering/dbscan.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pages/addSale.js"></script>
+</body>
+</html>
