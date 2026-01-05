@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Book a Call — Block</title>
+  <meta name="description" content="Book a call to see Block in your workflow and start a 1-month free trial after onboarding. Simple form + calendar embed placeholder." />
+  <link rel="canonical" href="https://www.blocksaas.com/book.html" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <meta property="og:site_name" content="Block" />
+  <meta property="og:title" content="Book a Call — Block" />
+  <meta property="og:description" content="Book a call to see Block in your workflow and start a 1-month free trial after onboarding. Simple form + calendar embed placeholder." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.blocksaas.com/book.html" />
+  <meta property="og:image" content="https://www.blocksaas.com/assets/img/desktop-ui-placeholder.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Book a Call — Block" />
+  <meta name="twitter:description" content="Book a call to see Block in your workflow and start a 1-month free trial after onboarding. Simple form + calendar embed placeholder." />
+  <meta name="twitter:image" content="https://www.blocksaas.com/assets/img/desktop-ui-placeholder.svg" />
+  <script type="application/ld+json">[{"@context": "https://schema.org", "@type": "Organization", "name": "Block", "url": "https://www.blocksaas.com", "logo": "https://www.blocksaas.com/assets/img/desktop-ui-placeholder.svg", "sameAs": []}, {"@context": "https://schema.org", "@type": "WebSite", "name": "Block", "url": "https://www.blocksaas.com", "potentialAction": {"@type": "SearchAction", "target": "https://www.blocksaas.com/faq.html?q={search_term_string}", "query-input": "required name=search_term_string"}}]</script>
+  <script src="assets/js/main.js" defer></script>
+</head>
+
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav" aria-label="Primary">
+      <a class="logo" href="index.html" aria-label="Block home">
+        <span class="logo__mark" aria-hidden="true"></span>
+        <span class="logo__word">Block</span>
+      </a>
+
+      <button class="nav__toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+      </button>
+
+      <nav id="navMenu" class="nav__menu">
+        <a class="nav__link" href="index.html">Home</a>
+        <a class="nav__link" href="product.html">Product</a>
+        <a class="nav__link" href="how-it-works.html">How it works</a>
+        <a class="nav__link" href="industries.html">Industries</a>
+        <a class="nav__link" href="pricing.html">Pricing</a>
+        <a class="nav__link" href="about.html">About</a>
+        <a class="nav__link" href="faq.html">FAQ</a>
+        <a class="btn btn--primary" href="book.html">Book a call</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="container stack stack--loose">
+      <div class="reveal">
+        <div class="section__kicker"><span class="kdot" aria-hidden="true"></span> Book a call</div>
+        <h1 class="h1">See Block in your workflow.</h1>
+        <p class="lede">Quick call to confirm fit, then onboarding. After that, you get a <strong>1‑month free trial</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--indigo">
+    <div class="container stack">
+      <div class="reveal">
+        <h2 class="h2">Request a time</h2>
+        <p class="lede">No backend is required for this demo. The form confirms your request locally.</p>
+
+        <form id="bookForm" class="form form--2 panel" aria-label="Book a call form">
+          <div class="field">
+            <label for="name">Full name *</label>
+            <input id="name" name="name" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="email">Email *</label>
+            <input id="email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="company">Company *</label>
+            <input id="company" name="company" autocomplete="organization" required />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" />
+          </div>
+          <div class="field">
+            <label for="industry">Industry</label>
+            <select id="industry" name="industry">
+              <option value="">Select</option>
+              <option>Power washing</option>
+              <option>Pest control</option>
+              <option>Lawn / landscaping</option>
+              <option>Roofing / exterior</option>
+              <option>Solar / home services</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="team">Team size</label>
+            <select id="team" name="team">
+              <option value="">Select</option>
+              <option>1–3</option>
+              <option>4–10</option>
+              <option>11–25</option>
+              <option>26–50</option>
+              <option>50+</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="notes">What are you using today? (Sheets, CRM, other)</label>
+            <textarea id="notes" name="notes" placeholder="Example: Google Sheets + a whiteboard. We spend 2–3 hours/week planning routes."></textarea>
+          </div>
+          <div class="hero__actions" style="grid-column: 1 / -1; margin-top: .2rem;">
+            <button class="btn btn--primary" type="submit">Submit request</button>
+            <a class="btn" href="pricing.html">Pricing</a>
+          </div>
+          <div id="formNotice" class="form-notice" tabindex="-1" role="status" aria-live="polite" style="grid-column: 1 / -1;">
+            Fill the form and submit. We&apos;ll confirm a time.
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--amber">
+    <div class="container stack">
+      <div class="reveal">
+        <h2 class="h2">Calendar embed placeholder</h2>
+        <div class="embed-placeholder" aria-label="Calendar embed placeholder">
+          <div>
+            <strong>Calendar embed goes here</strong>
+            <p class="muted">Replace this block with Calendly, Google Calendar appointment schedules, or your preferred booking embed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--teal">
+    <div class="container stack">
+      <div class="reveal panel">
+        <h2 class="h2">Prefer to browse first?</h2>
+        <p class="lede">See product details and the workflow, then book when ready.</p>
+        <div class="hero__actions">
+          <a class="btn" href="product.html">Explore product</a>
+          <a class="btn" href="how-it-works.html">How it works</a>
+          <a class="btn btn--primary" href="book.html">Book a call</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <div class="logo logo--footer" aria-label="Block">
+          <span class="logo__mark" aria-hidden="true"></span>
+          <span class="logo__word">Block</span>
+        </div>
+        <p class="muted">Sales operations for teams that don&apos;t sit at desks.</p>
+      </div>
+      <nav class="footer__nav" aria-label="Footer">
+        <a href="product.html">Product</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="industries.html">Industries</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="about.html">About</a>
+        <a href="faq.html">FAQ</a>
+        <a href="book.html">Book a call</a>
+      </nav>
+    </div>
+    <div class="footer__bottom">
+      <p class="muted">&copy; <span id="year"></span> Block. All rights reserved.</p>
+      <p class="muted">Replace spreadsheets. Run routes. Keep control.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
+
