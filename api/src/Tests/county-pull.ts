@@ -22,7 +22,6 @@ async function AttomToSupabaseTest() {
   var neighborhoodValue = "";
   var visitDuration = 0;
   var statusCode = "";
-  var isCorner = false;
   var streetNameValue = "";
   var houseNum = 0;
 
@@ -36,7 +35,6 @@ async function AttomToSupabaseTest() {
   neighborhoodValue = attomData.property[0].area.subdname || "Unknown";
   visitDuration = 0;
   statusCode = "ACTIVE";
-  isCorner = false;
   streetNameValue = attomData.property[0].address.line1 || "Unknown";
   houseNum = 0;
 
@@ -49,7 +47,6 @@ async function AttomToSupabaseTest() {
         neighborhood: neighborhoodValue,
         visitDurationMinutes: visitDuration,
         status: statusCode,   // or just "ACTIVE" if you mapped it as string
-        isCornerHouse: isCorner,
         streetName: streetNameValue.replace(/\d+/g, '').trim(),
         houseNumber: houseNum,
       },
