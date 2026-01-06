@@ -70,4 +70,3 @@ model Profiles {
   role      String   @default("rep") //admin, manager, rep
   createdAt DateTime @default(now())
 }
-
