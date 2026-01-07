@@ -13,7 +13,7 @@ const apiKey = "a22ba0e42d765077dc9e5593f8861bee";
 export async function getPropertyData(address1: any, address2: any) {
     try {
         const response = await axios.get(
-            `${baseURL}/propertyapi/v1.0.0/property/detail`,
+            `${baseURL}/propertyapi/v1.0.0/property/basicprofile`,
             {
                 params: {address1, address2 },
                 headers: {
