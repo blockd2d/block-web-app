@@ -1,0 +1,530 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_log {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id           String        @db.Uuid
+  actor_profile_id String?       @db.Uuid
+  action           String
+  entity_type      String?
+  entity_id        String?       @db.Uuid
+  meta_json        Json          @default("{}")
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
+  profiles         profiles?     @relation(fields: [actor_profile_id], references: [id], onUpdate: NoAction)
+  organizations    organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cluster_properties {
+  org_id        String        @db.Uuid
+  cluster_id    String        @db.Uuid
+  property_id   String        @db.Uuid
+  clusters      clusters      @relation(fields: [cluster_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties    properties    @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([org_id, cluster_id, property_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model cluster_sets {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  county_id     String        @db.Uuid
+  filters_json  Json
+  status        String        @default("queued")
+  progress      Int           @default(0)
+  error         String?
+  created_by    String?       @db.Uuid
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  name          String        @default("Cluster Set")
+  radius_m      Int?
+  min_houses    Int?
+  counties      counties      @relation(fields: [county_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles      profiles?     @relation(fields: [created_by], references: [id], onUpdate: NoAction)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  clusters      clusters[]
+
+  @@index([org_id], map: "cluster_sets_org_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clusters {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String               @db.Uuid
+  cluster_set_id     String               @db.Uuid
+  center_lat         Float
+  center_lng         Float
+  hull_geojson       Json
+  stats_json         Json                 @default("{}")
+  assigned_rep_id    String?              @db.Uuid
+  color              String?
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  cluster_properties cluster_properties[]
+  reps               reps?                @relation(fields: [assigned_rep_id], references: [id], onUpdate: NoAction)
+  cluster_sets       cluster_sets         @relation(fields: [cluster_set_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations      organizations        @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([assigned_rep_id], map: "clusters_assigned_rep_idx")
+  @@index([org_id, cluster_set_id], map: "clusters_org_set_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contracts {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String        @db.Uuid
+  sale_id              String        @unique @db.Uuid
+  pdf_path             String
+  signed_at            DateTime?     @db.Timestamptz(6)
+  signer_name          String?
+  signature_image_path String?
+  terms_version        String?       @default("v1")
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  organizations        organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales                sales         @relation(fields: [sale_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model counties {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String         @db.Uuid
+  name          String
+  fips          String?
+  bounds        Json?
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  cluster_sets  cluster_sets[]
+  organizations organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties    properties[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model daily_stats {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  profile_id    String?       @db.Uuid
+  rep_id        String?       @db.Uuid
+  day           DateTime      @db.Date
+  doors_knocked Int           @default(0)
+  talked        Int           @default(0)
+  leads         Int           @default(0)
+  quotes        Int           @default(0)
+  sold          Int           @default(0)
+  revenue       Decimal       @default(0) @db.Decimal
+  xp            Int           @default(0)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+  hours_worked  Decimal       @default(0) @db.Decimal
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles      profiles?     @relation(fields: [profile_id], references: [id], onUpdate: NoAction)
+  reps          reps?         @relation(fields: [rep_id], references: [id], onUpdate: NoAction)
+
+  @@unique([org_id, rep_id, day])
+  @@index([org_id, day], map: "daily_stats_org_day_idx")
+  @@index([org_id, rep_id, day], map: "daily_stats_org_rep_day_idx")
+  @@index([rep_id, day], map: "daily_stats_rep_day_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model exports {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  type          String
+  status        String        @default("queued")
+  storage_path  String?
+  error         String?
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model followups {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  rep_id        String        @db.Uuid
+  property_id   String        @db.Uuid
+  due_at        DateTime      @db.Timestamptz(6)
+  status        String        @default("open")
+  notes         String?
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties    properties    @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reps          reps          @relation(fields: [rep_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model interactions {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  rep_id        String        @db.Uuid
+  property_id   String        @db.Uuid
+  outcome       String
+  notes         String?
+  followup_at   DateTime?     @db.Timestamptz(6)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties    properties    @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reps          reps          @relation(fields: [rep_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id, rep_id], map: "interactions_org_rep_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model invites {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  email         String
+  role          String
+  token         String        @unique
+  expires_at    DateTime      @db.Timestamptz(6)
+  accepted_at   DateTime?     @db.Timestamptz(6)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model job_photos {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  job_id        String        @db.Uuid
+  kind          String        @default("after")
+  storage_path  String
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  jobs          jobs          @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id, job_id, created_at], map: "job_photos_org_job_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jobs {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String        @db.Uuid
+  sale_id            String        @db.Uuid
+  laborer_id         String?       @db.Uuid
+  scheduled_start    DateTime?     @db.Timestamptz(6)
+  scheduled_end      DateTime?     @db.Timestamptz(6)
+  status             String        @default("scheduled")
+  started_at         DateTime?     @db.Timestamptz(6)
+  completed_at       DateTime?     @db.Timestamptz(6)
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  completion_notes   String?
+  upcharge_notes     String?
+  signature_data_url String?
+  job_photos         job_photos[]
+  laborers           laborers?     @relation(fields: [laborer_id], references: [id], onUpdate: NoAction)
+  organizations      organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales              sales         @relation(fields: [sale_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payments           payments[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model jobs_queue {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String?        @db.Uuid
+  type          String
+  status        String         @default("queued")
+  progress      Int            @default(0)
+  payload       Json           @default("{}")
+  result        Json?
+  error         String?
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  started_at    DateTime?      @db.Timestamptz(6)
+  finished_at   DateTime?      @db.Timestamptz(6)
+  organizations organizations? @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status, created_at], map: "jobs_queue_status_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model labor_availability {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  laborer_id    String        @db.Uuid
+  day_of_week   Int
+  start_time    DateTime      @db.Time(6)
+  end_time      DateTime      @db.Time(6)
+  timezone      String        @default("America/Indiana/Indianapolis")
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  laborers      laborers      @relation(fields: [laborer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model labor_time_off {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  laborer_id    String        @db.Uuid
+  start_at      DateTime      @db.Timestamptz(6)
+  end_at        DateTime      @db.Timestamptz(6)
+  reason        String?
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  laborers      laborers      @relation(fields: [laborer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model laborers {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String               @db.Uuid
+  profile_id         String?              @db.Uuid
+  name               String
+  active             Boolean              @default(true)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  jobs               jobs[]
+  labor_availability labor_availability[]
+  labor_time_off     labor_time_off[]
+  organizations      organizations        @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles           profiles?            @relation(fields: [profile_id], references: [id], onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model message_threads {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id               String        @db.Uuid
+  rep_id               String?       @db.Uuid
+  customer_phone       String
+  property_id          String?       @db.Uuid
+  last_message_at      DateTime?     @db.Timestamptz(6)
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  status               String        @default("open")
+  last_message_preview String?
+  organizations        organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties           properties?   @relation(fields: [property_id], references: [id], onUpdate: NoAction)
+  reps                 reps?         @relation(fields: [rep_id], references: [id], onUpdate: NoAction)
+  messages             messages[]
+
+  @@unique([org_id, customer_phone])
+  @@index([org_id, last_message_at(sort: Desc)], map: "message_threads_org_last_activity_idx")
+  @@index([org_id, status, last_message_at(sort: Desc)], map: "message_threads_org_status_last_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model messages {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String          @db.Uuid
+  thread_id          String          @db.Uuid
+  direction          String
+  body               String
+  twilio_sid         String?
+  sent_at            DateTime?       @db.Timestamptz(6)
+  status             String?
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  from_phone         String?
+  to_phone           String?
+  sent_by_profile_id String?         @db.Uuid
+  sent_by_rep_id     String?         @db.Uuid
+  organizations      organizations   @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles           profiles?       @relation(fields: [sent_by_profile_id], references: [id], onUpdate: NoAction)
+  reps               reps?           @relation(fields: [sent_by_rep_id], references: [id], onUpdate: NoAction)
+  message_threads    message_threads @relation(fields: [thread_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id, thread_id], map: "messages_org_thread_idx")
+  @@index([thread_id, sent_at(sort: Desc), created_at(sort: Desc)], map: "messages_thread_sent_at_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model org_settings {
+  org_id        String        @id @db.Uuid
+  twilio_number String?
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model organizations {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  audit_log          audit_log[]
+  cluster_properties cluster_properties[]
+  cluster_sets       cluster_sets[]
+  clusters           clusters[]
+  contracts          contracts[]
+  counties           counties[]
+  daily_stats        daily_stats[]
+  exports            exports[]
+  followups          followups[]
+  interactions       interactions[]
+  invites            invites[]
+  job_photos         job_photos[]
+  jobs               jobs[]
+  jobs_queue         jobs_queue[]
+  labor_availability labor_availability[]
+  labor_time_off     labor_time_off[]
+  laborers           laborers[]
+  message_threads    message_threads[]
+  messages           messages[]
+  org_settings       org_settings?
+  payments           payments[]
+  profiles           profiles[]
+  properties         properties[]
+  rep_locations      rep_locations[]
+  reps               reps[]
+  sale_attachments   sale_attachments[]
+  sales              sales[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payments {
+  id                         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                     String        @db.Uuid
+  job_id                     String        @db.Uuid
+  provider                   String        @default("stripe")
+  amount                     Int
+  currency                   String        @default("usd")
+  status                     String        @default("pending")
+  stripe_payment_intent_id   String?
+  stripe_checkout_session_id String?
+  checkout_url               String?
+  created_at                 DateTime      @default(now()) @db.Timestamptz(6)
+  jobs                       jobs          @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations              organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model profiles {
+  id            String         @id @db.Uuid
+  org_id        String         @db.Uuid
+  role          String
+  name          String
+  email         String
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  audit_log     audit_log[]
+  cluster_sets  cluster_sets[]
+  daily_stats   daily_stats[]
+  laborers      laborers[]
+  messages      messages[]
+  organizations organizations  @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reps          reps[]
+
+  @@index([org_id], map: "profiles_org_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model properties {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String               @db.Uuid
+  county_id          String               @db.Uuid
+  lat                Float
+  lng                Float
+  address1           String?
+  city               String?
+  state              String?
+  zip                String?
+  value_estimate     Decimal?             @db.Decimal
+  tags               Json?
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  cluster_properties cluster_properties[]
+  followups          followups[]
+  interactions       interactions[]
+  message_threads    message_threads[]
+  counties           counties             @relation(fields: [county_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations      organizations        @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales              sales[]
+
+  @@index([lat, lng], map: "properties_latlng_idx")
+  @@index([org_id, county_id], map: "properties_org_county_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model rep_locations {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  rep_id        String        @db.Uuid
+  lat           Float
+  lng           Float
+  speed         Float?
+  heading       Float?
+  clocked_in    Boolean       @default(true)
+  recorded_at   DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reps          reps          @relation(fields: [rep_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([rep_id, recorded_at(sort: Desc)], map: "rep_locations_rep_time_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reps {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id          String            @db.Uuid
+  profile_id      String?           @db.Uuid
+  name            String
+  home_lat        Float
+  home_lng        Float
+  active          Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamptz(6)
+  clusters        clusters[]
+  daily_stats     daily_stats[]
+  followups       followups[]
+  interactions    interactions[]
+  message_threads message_threads[]
+  messages        messages[]
+  rep_locations   rep_locations[]
+  organizations   organizations     @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles        profiles?         @relation(fields: [profile_id], references: [id], onUpdate: NoAction)
+  sales           sales[]
+
+  @@index([org_id], map: "reps_org_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sale_attachments {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  sale_id       String        @db.Uuid
+  type          String
+  storage_path  String
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales         sales         @relation(fields: [sale_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sales {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id           String             @db.Uuid
+  rep_id           String             @db.Uuid
+  property_id      String             @db.Uuid
+  price            Decimal?           @db.Decimal
+  service_type     String?
+  notes            String?
+  customer_phone   String?
+  customer_email   String?
+  status           String             @default("lead")
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  customer_name    String?
+  updated_at       DateTime           @default(now()) @db.Timestamptz(6)
+  contracts        contracts?
+  jobs             jobs[]
+  sale_attachments sale_attachments[]
+  organizations    organizations      @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  properties       properties         @relation(fields: [property_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reps             reps               @relation(fields: [rep_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([org_id, created_at(sort: Desc)], map: "idx_sales_org_created_at")
+  @@index([org_id, customer_email], map: "idx_sales_org_customer_email")
+  @@index([org_id, customer_name], map: "idx_sales_org_customer_name")
+  @@index([org_id, customer_phone], map: "idx_sales_org_customer_phone")
+  @@index([org_id, rep_id, created_at(sort: Desc)], map: "idx_sales_org_rep_created_at")
+  @@index([org_id, status, created_at(sort: Desc)], map: "idx_sales_org_status_created_at")
+  @@index([org_id, rep_id], map: "sales_org_rep_idx")
+}

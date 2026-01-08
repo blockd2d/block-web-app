@@ -12,7 +12,12 @@
   },
   "devDependencies": {
     "prettier": "^3.3.3",
+    "prisma": "^7.2.0",
+    "supabase": "^2.72.0",
     "turbo": "^2.2.3",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.2.0"
   }
 }

@@ -1,17 +1,24 @@
 -- Org settings (Twilio number per org, etc.)
 
-create table if not exists org_settings (
-  org_id uuid primary key references organizations(id) on delete cascade,
+create table if not exists public.org_settings (
+  org_id uuid primary key references public.organizations(id) on delete cascade,
   twilio_number text,
   created_at timestamptz not null default now()
 );
 
-alter table org_settings enable row level security;
+alter table public.org_settings enable row level security;
 
-drop policy if exists org_settings_select on org_settings;
-create policy org_settings_select on org_settings for select
-using (org_id = current_org() and is_manager());
+-- Managers can read org settings
+drop policy if exists org_settings_select on public.org_settings;
+create policy org_settings_select
+on public.org_settings
+for select
+using (org_id = public.current_org() and public.is_manager());
 
-drop policy if exists org_settings_no_write on org_settings;
-create policy org_settings_no_write on org_settings for all
-using (false) with check (false);
+-- No client writes (backend/service role only)
+drop policy if exists org_settings_no_write on public.org_settings;
+create policy org_settings_no_write
+on public.org_settings
+for all
+using (false)
+with check (false);
