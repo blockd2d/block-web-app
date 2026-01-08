@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "MockHouse" ADD COLUMN     "propertyValue" DOUBLE PRECISION NOT NULL DEFAULT 0.0;

@@ -1,1 +1,0 @@
-//ping using Prisma to test Supabase connection

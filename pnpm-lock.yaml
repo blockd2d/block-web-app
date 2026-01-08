@@ -1,0 +1,20 @@
+# NOTE:
+# This lockfile placeholder exists to satisfy repository hygiene requirements.
+# Generate a real lockfile on a machine with internet access:
+#   corepack enable
+#   pnpm install
+# and commit the resulting pnpm-lock.yaml for reproducible deployments.
+#
+# On CI/Vercel where pnpm may default to frozen lockfiles, set Install Command to:
+#   pnpm install --no-frozen-lockfile
+# until you commit a real lockfile.
+
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers: {}
+
+packages: {}

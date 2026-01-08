@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Block V7 Theme System
+  - Light Professional (class: light)
+  - Dark Neon (class: dark)
+
+  We follow shadcn-style tokens so Tailwind can reference CSS variables.
+*/
+
+:root {
+  color-scheme: light;
+
+  --background: 0 0% 100%;
+  --foreground: 240 10% 6%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 6%;
+
+  --muted: 240 6% 96%;
+  --muted-foreground: 240 4% 44%;
+
+  --border: 240 7% 89%;
+  --input: 240 7% 89%;
+  --ring: 240 10% 10%;
+
+  --primary: 238 90% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 6% 96%;
+  --secondary-foreground: 240 10% 10%;
+
+  --accent: 240 6% 96%;
+  --accent-foreground: 240 10% 10%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --shadow: 240 10% 10%;
+}
+
+/* Dark Neon */
+.dark {
+  color-scheme: dark;
+
+  --background: 240 10% 5%;
+  --foreground: 0 0% 98%;
+
+  --card: 240 10% 8%;
+  --card-foreground: 0 0% 98%;
+
+  --muted: 240 9% 12%;
+  --muted-foreground: 240 6% 68%;
+
+  --border: 240 8% 18%;
+  --input: 240 8% 18%;
+  --ring: 186 100% 50%;
+
+  --primary: 186 100% 50%; /* neon cyan */
+  --primary-foreground: 240 10% 6%;
+
+  --secondary: 240 9% 12%;
+  --secondary-foreground: 0 0% 98%;
+
+  --accent: 278 90% 58%; /* neon purple */
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 78% 56%;
+  --destructive-foreground: 0 0% 100%;
+
+  --shadow: 186 100% 50%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Mapbox CSS tweaks */
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-logo {
+  opacity: 0.5;
+}
+
+/* Subtle scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
