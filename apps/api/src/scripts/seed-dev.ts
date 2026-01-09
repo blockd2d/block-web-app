@@ -2,11 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+//TODO save in process.env later for security
+const SUPABASE_URL = "https://jzzgtemqjibvyjdjjxdb.supabase.co";
+const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emd0ZW1xamlidnlqZGpqeGRiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA4NjU5MiwiZXhwIjoyMDc5NjYyNTkyfQ.2WPenLihuvICucw3VUqBAQNLU5HjRTthnAyaB1XsXNU";
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
-  throw new Error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+  throw new Error('Missing DATABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
 }
 
 const sb = createClient(SUPABASE_URL, SERVICE_KEY);
