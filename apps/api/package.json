@@ -1,6 +1,7 @@
 {
   "name": "@block/api",
   "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
   "private": true,
   "type": "module",
   "main": "src/index.ts",
