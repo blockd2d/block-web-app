@@ -23,6 +23,32 @@ const ThreadQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(200).default(50)
 });
 
+type ThreadQuery = z.infer<typeof ThreadQuerySchema>;
+type SendBody = z.infer<typeof SendSchema>;
+
+type RepRow = { id: string; name: string | null };
+type PropertyRow = {
+  id: string;
+  address1: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  county_id: string | null;
+  tags?: Record<string, unknown> | null;
+};
+type CountyRow = { id: string; name: string; state: string };
+type ThreadRow = {
+  id: string;
+  org_id: string;
+  customer_phone: string | null;
+  rep_id: string | null;
+  property_id: string | null;
+  status: string | null;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  created_at: string | null;
+};
+
 async function repForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service
     .from('reps')
@@ -30,7 +56,7 @@ async function repForProfile(service: any, org_id: string, profile_id: string) {
     .eq('org_id', org_id)
     .eq('profile_id', profile_id)
     .single();
-  return data || null;
+  return (data as RepRow) || null;
 }
 
 function sanitizePreview(body: string) {
@@ -48,9 +74,9 @@ function twimlOk() {
 export async function messagesRoutes(app: FastifyInstance) {
   // Thread list for managers/admins (reps only see their own assigned threads)
   app.get('/threads', async (req, reply) => {
-    const ctx = requireAnyAuthed(req);
+    const ctx = requireAnyAuthed(req) as any;
     const service = createServiceClient();
-    const q = ThreadQuerySchema.parse((req.query as any) || {});
+    const q: ThreadQuery = ThreadQuerySchema.parse((req.query as any) || {});
 
     let query = service
       .from('message_threads')
@@ -74,33 +100,43 @@ export async function messagesRoutes(app: FastifyInstance) {
     const { data: threads, error } = await query;
     if (error) return reply.code(400).send({ error: error.message });
 
-    const threadRows = threads || [];
+    const threadRows: ThreadRow[] = (threads as ThreadRow[]) || [];
 
     // Hydrate reps + properties + counties for UI convenience
-    const repIds = Array.from(new Set(threadRows.map((t: any) => t.rep_id).filter(Boolean)));
-    const propIds = Array.from(new Set(threadRows.map((t: any) => t.property_id).filter(Boolean)));
+    const repIds = Array.from(new Set(threadRows.map((t) => t.rep_id).filter(Boolean))) as string[];
+    const propIds = Array.from(new Set(threadRows.map((t) => t.property_id).filter(Boolean))) as string[];
 
-    const [{ data: reps }, { data: props }] = await Promise.all([
-      repIds.length ? service.from('reps').select('id,name').eq('org_id', ctx.org_id).in('id', repIds) : Promise.resolve({ data: [] }),
-      propIds.length
-        ? service.from('properties').select('id,address1,city,state,zip,county_id').eq('org_id', ctx.org_id).in('id', propIds)
-        : Promise.resolve({ data: [] })
-    ] as any);
+    const repsPromise = repIds.length
+      ? service.from('reps').select('id,name').eq('org_id', ctx.org_id).in('id', repIds)
+      : Promise.resolve({ data: [] as RepRow[] });
 
-    const repById = new Map((reps || []).map((r: any) => [r.id, r.name]));
-    const propById = new Map((props || []).map((p: any) => [p.id, p]));
+    const propsPromise = propIds.length
+      ? service.from('properties').select('id,address1,city,state,zip,county_id').eq('org_id', ctx.org_id).in('id', propIds)
+      : Promise.resolve({ data: [] as PropertyRow[] });
 
-    const countyIds = Array.from(new Set((props || []).map((p: any) => p.county_id).filter(Boolean)));
-    const { data: counties } = countyIds.length
+    const [{ data: repsData }, { data: propsData }] = await Promise.all([repsPromise, propsPromise]);
+
+    const reps = (repsData as RepRow[]) || [];
+    const props = (propsData as PropertyRow[]) || [];
+
+    const repById = new Map<string, string | null>(reps.map((r) => [r.id, r.name]));
+    const propById = new Map<string, PropertyRow>(props.map((p) => [p.id, p]));
+
+    const countyIds = Array.from(new Set(props.map((p) => p.county_id).filter(Boolean))) as string[];
+
+    const { data: countiesData } = countyIds.length
       ? await service.from('counties').select('id,name,state').eq('org_id', ctx.org_id).in('id', countyIds)
-      : { data: [] as any[] };
-    const countyById = new Map((counties || []).map((c: any) => [c.id, `${c.name}, ${c.state}`]));
+      : ({ data: [] as CountyRow[] } as any);
 
-    let items = threadRows.map((t: any) => {
-      const prop = t.property_id ? propById.get(t.property_id) : null;
+    const counties = (countiesData as CountyRow[]) || [];
+    const countyById = new Map<string, string>(counties.map((c) => [c.id, `${c.name}, ${c.state}`]));
+
+    let items = threadRows.map((t) => {
+      const prop: PropertyRow | undefined = t.property_id ? propById.get(t.property_id) : undefined;
       const countyName = prop?.county_id ? countyById.get(prop.county_id) : null;
+
       const propAddr = prop
-        ? `${prop.address1}${prop.city ? `, ${prop.city}` : ''}${prop.state ? `, ${prop.state}` : ''}${prop.zip ? ` ${prop.zip}` : ''}`
+        ? `${prop.address1 ?? ''}${prop.city ? `, ${prop.city}` : ''}${prop.state ? `, ${prop.state}` : ''}${prop.zip ? ` ${prop.zip}` : ''}`
         : null;
 
       return {
@@ -108,22 +144,22 @@ export async function messagesRoutes(app: FastifyInstance) {
         customer_phone: t.customer_phone,
         status: t.status,
         rep_id: t.rep_id,
-        rep_name: t.rep_id ? repById.get(t.rep_id) || null : null,
+        rep_name: t.rep_id ? repById.get(t.rep_id) ?? null : null,
         property_id: t.property_id,
         property_address: propAddr,
-        county_id: prop?.county_id || null,
-        county_name: countyName || null,
+        county_id: prop?.county_id ?? null,
+        county_name: countyName ?? null,
         last_message_at: t.last_message_at,
         last_message_preview: t.last_message_preview,
         created_at: t.created_at
       };
     });
 
-    if (q.county_id) items = items.filter((i: any) => i.county_id === q.county_id);
+    if (q.county_id) items = items.filter((i) => i.county_id === q.county_id);
 
     if (q.q) {
       const needle = q.q.toLowerCase();
-      items = items.filter((i: any) =>
+      items = items.filter((i) =>
         (i.customer_phone || '').toLowerCase().includes(needle) ||
         (i.property_address || '').toLowerCase().includes(needle) ||
         (i.last_message_preview || '').toLowerCase().includes(needle) ||
@@ -136,7 +172,7 @@ export async function messagesRoutes(app: FastifyInstance) {
 
   // Messages list for a thread
   app.get('/threads/:id/messages', async (req, reply) => {
-    const ctx = requireAnyAuthed(req);
+    const ctx = requireAnyAuthed(req) as any;
     const { id } = req.params as any;
     const limit = Math.min(200, Math.max(1, Number((req.query as any)?.limit || 200)));
     const service = createServiceClient();
@@ -145,13 +181,16 @@ export async function messagesRoutes(app: FastifyInstance) {
     if (ctx.role === 'rep') {
       const rep = await repForProfile(service, ctx.org_id, ctx.profile_id);
       if (!rep) return reply.code(404).send({ error: 'Thread not found' });
+
       const { data: thread } = await service
         .from('message_threads')
         .select('id,rep_id')
         .eq('org_id', ctx.org_id)
         .eq('id', id)
         .single();
-      if (!thread || thread.rep_id !== rep.id) return reply.code(404).send({ error: 'Thread not found' });
+
+      const threadRow = thread as { id: string; rep_id: string | null } | null;
+      if (!threadRow || threadRow.rep_id !== rep.id) return reply.code(404).send({ error: 'Thread not found' });
     }
 
     const { data, error } = await service
@@ -169,7 +208,7 @@ export async function messagesRoutes(app: FastifyInstance) {
 
   // Convenience endpoint (rep-mobile legacy): thread + messages
   app.get('/threads/:id', async (req, reply) => {
-    const ctx = requireAnyAuthed(req);
+    const ctx = requireAnyAuthed(req) as any;
     const { id } = req.params as any;
     const service = createServiceClient();
 
@@ -179,11 +218,12 @@ export async function messagesRoutes(app: FastifyInstance) {
       .eq('org_id', ctx.org_id)
       .eq('id', id)
       .single();
+
     if (!thread) return reply.code(404).send({ error: 'Thread not found' });
 
     if (ctx.role === 'rep') {
       const rep = await repForProfile(service, ctx.org_id, ctx.profile_id);
-      if (!rep || thread.rep_id !== rep.id) return reply.code(404).send({ error: 'Thread not found' });
+      if (!rep || (thread as any).rep_id !== rep.id) return reply.code(404).send({ error: 'Thread not found' });
     }
 
     const { data: messages } = await service
@@ -200,7 +240,7 @@ export async function messagesRoutes(app: FastifyInstance) {
 
   // Send message (outbound). All Twilio work must happen in the backend worker/service layer.
   app.post('/send', async (req, reply) => {
-    const ctx = requireAnyAuthed(req);
+    const ctx = requireAnyAuthed(req) as any;
 
     // Reps can always send. Managers/admins can only send if feature flag is enabled.
     if (ctx.role !== 'rep') {
@@ -210,7 +250,7 @@ export async function messagesRoutes(app: FastifyInstance) {
       if (ctx.role !== 'admin' && ctx.role !== 'manager') return reply.code(403).send({ error: 'Forbidden' });
     }
 
-    const body = SendSchema.parse(req.body ?? {});
+    const body: SendBody = SendSchema.parse(req.body ?? {});
     const service = createServiceClient();
 
     const senderRep = ctx.role === 'rep' ? await repForProfile(service, ctx.org_id, ctx.profile_id) : null;
@@ -226,6 +266,7 @@ export async function messagesRoutes(app: FastifyInstance) {
         .eq('id', body.thread_id)
         .single();
       thread = data;
+
       if (!thread) return reply.code(404).send({ error: 'Thread not found' });
 
       // Reps can only send on their own assigned threads
@@ -255,14 +296,14 @@ export async function messagesRoutes(app: FastifyInstance) {
         )
         .select('*')
         .single();
+
       if (error) return reply.code(400).send({ error: error.message });
       thread = data;
     }
 
     // Determine outbound "from" number
-    let fromNumber: string | null = null;
     const { data: settings } = await service.from('org_settings').select('twilio_number').eq('org_id', ctx.org_id).maybeSingle();
-    fromNumber = settings?.twilio_number || env.TWILIO_NUMBER || null;
+    const fromNumber = (settings as any)?.twilio_number || env.TWILIO_NUMBER || null;
 
     const sentAt = new Date().toISOString();
 
@@ -304,10 +345,11 @@ export async function messagesRoutes(app: FastifyInstance) {
   });
 
   app.post('/threads/:id/reassign', async (req, reply) => {
-    const ctx = requireManager(req);
+    const ctx = requireManager(req) as any;
     const { id } = req.params as any;
     const body = z.object({ rep_id: z.string().uuid().nullable() }).parse(req.body ?? {});
     const service = createServiceClient();
+
     const { data, error } = await service
       .from('message_threads')
       .update({ rep_id: body.rep_id })
@@ -315,16 +357,19 @@ export async function messagesRoutes(app: FastifyInstance) {
       .eq('id', id)
       .select('*')
       .single();
+
     if (error) return reply.code(400).send({ error: error.message });
+
     await audit(ctx.org_id, ctx.profile_id, 'thread.reassigned', { type: 'message_thread', id }, { rep_id: body.rep_id });
     return reply.send({ thread: data });
   });
 
   app.post('/threads/:id/status', async (req, reply) => {
-    const ctx = requireManager(req);
+    const ctx = requireManager(req) as any;
     const { id } = req.params as any;
     const body = z.object({ status: z.string().min(1) }).parse(req.body ?? {});
     const service = createServiceClient();
+
     const { data, error } = await service
       .from('message_threads')
       .update({ status: body.status })
@@ -332,16 +377,16 @@ export async function messagesRoutes(app: FastifyInstance) {
       .eq('id', id)
       .select('*')
       .single();
+
     if (error) return reply.code(400).send({ error: error.message });
+
     await audit(ctx.org_id, ctx.profile_id, 'thread.status', { type: 'message_thread', id }, { status: body.status });
     return reply.send({ thread: data });
   });
 
-
-
   // Convenience thread actions for ops UI
   app.post('/threads/:id/resolve', async (req, reply) => {
-    const ctx = requireManager(req);
+    const ctx = requireManager(req) as any;
     const { id } = req.params as any;
     const service = createServiceClient();
 
@@ -360,7 +405,7 @@ export async function messagesRoutes(app: FastifyInstance) {
   });
 
   app.post('/threads/:id/dnk', async (req, reply) => {
-    const ctx = requireManager(req);
+    const ctx = requireManager(req) as any;
     const { id } = req.params as any;
     const service = createServiceClient();
 
@@ -371,7 +416,8 @@ export async function messagesRoutes(app: FastifyInstance) {
       .eq('id', id)
       .single();
 
-    if (tErr || !thread) return reply.code(404).send({ error: 'Thread not found' });
+    const threadRow = thread as { id: string; property_id: string | null } | null;
+    if (tErr || !threadRow) return reply.code(404).send({ error: 'Thread not found' });
 
     const { data, error } = await service
       .from('message_threads')
@@ -384,23 +430,25 @@ export async function messagesRoutes(app: FastifyInstance) {
     if (error) return reply.code(400).send({ error: error.message });
 
     // Best-effort: mark the underlying property as DNK so clustering/exports can respect it.
-    if (thread.property_id) {
+    if (threadRow.property_id) {
       const { data: prop } = await service
         .from('properties')
         .select('id,tags')
         .eq('org_id', ctx.org_id)
-        .eq('id', thread.property_id)
+        .eq('id', threadRow.property_id)
         .maybeSingle();
 
-      if (prop) {
-        const tags = { ...(prop.tags || {}), dnk: true };
-        await service.from('properties').update({ tags }).eq('org_id', ctx.org_id).eq('id', thread.property_id);
+      const propRow = prop as { id: string; tags: Record<string, unknown> | null } | null;
+      if (propRow) {
+        const tags = { ...(propRow.tags || {}), dnk: true };
+        await service.from('properties').update({ tags }).eq('org_id', ctx.org_id).eq('id', threadRow.property_id);
       }
     }
 
     await audit(ctx.org_id, ctx.profile_id, 'thread.dnk', { type: 'message_thread', id }, {});
     return reply.send({ thread: data });
   });
+
   // Twilio inbound webhook (kept under /v1/messages for convenience)
   app.post('/twilio/inbound', async (req, reply) => {
     // Twilio sends x-www-form-urlencoded
@@ -422,7 +470,7 @@ export async function messagesRoutes(app: FastifyInstance) {
       .eq('twilio_number', To)
       .maybeSingle();
 
-    const org_id = orgRow?.org_id as string | undefined;
+    const org_id = (orgRow as any)?.org_id as string | undefined;
     if (!org_id) {
       // Unknown org/number — acknowledge but do nothing
       return reply.type('text/xml').send(twimlOk());
@@ -449,7 +497,7 @@ export async function messagesRoutes(app: FastifyInstance) {
 
     await service.from('messages').insert({
       org_id,
-      thread_id: thread.id,
+      thread_id: (thread as any).id,
       direction: 'inbound',
       body: Body,
       twilio_sid: MessageSid || null,
@@ -463,7 +511,7 @@ export async function messagesRoutes(app: FastifyInstance) {
       .from('message_threads')
       .update({ last_message_at: now, last_message_preview: sanitizePreview(Body) })
       .eq('org_id', org_id)
-      .eq('id', thread.id);
+      .eq('id', (thread as any).id);
 
     return reply.type('text/xml').send(twimlOk());
   });

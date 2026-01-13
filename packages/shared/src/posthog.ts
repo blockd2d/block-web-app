@@ -6,6 +6,7 @@ export const PosthogEvents = {
   CLUSTERSET_CREATED: 'clusterset_created',
   CLUSTERSET_COMPLETED: 'clusterset_completed',
   CLUSTER_ASSIGNED: 'cluster_assigned',
+  CONTRACT_SIGNED: 'contract_signed',
   INTERACTION_LOGGED: 'interaction_logged',
   SALE_CREATED: 'sale_created',
   CONTRACT_GENERATED: 'contract_generated',

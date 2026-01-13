@@ -65,7 +65,7 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.post('/refresh', async (req, reply) => {
     const isMobile = (req.headers['x-block-client'] || '') === 'mobile';
-    // @ts-expect-error fastify-cookie
+    //fastify-cookie
     const cookieRefresh = req.cookies?.[env.REFRESH_COOKIE_NAME];
     const body: any = req.body || {};
     const refresh = (body.refresh_token as string | undefined) || (cookieRefresh as string | undefined);

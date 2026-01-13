@@ -53,7 +53,7 @@ export function buildServer() {
 
   // Capture raw body for Stripe webhook signature verification
   app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (req, body, done) {
-    // @ts-expect-error
+    
     (req as any).rawBody = body;
     try {
       const json = JSON.parse(body.toString('utf8') || '{}');

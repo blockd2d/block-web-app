@@ -16,7 +16,7 @@ export type AuthContext = {
 export function getAccessTokenFromRequest(req: FastifyRequest): string | null {
   const auth = req.headers['authorization'];
   if (typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice('Bearer '.length);
-  // @ts-expect-error fastify-cookie
+  //fastify-cookie
   const c = req.cookies?.[env.SESSION_COOKIE_NAME];
   return typeof c === 'string' && c.length > 0 ? c : null;
 }
@@ -100,7 +100,7 @@ export function clearAuthCookies(reply: FastifyReply) {
 export function requireCsrf(req: FastifyRequest) {
   if (isBearerRequest(req)) return; // bearer requests are not CSRF vulnerable
   const header = req.headers['x-csrf'];
-  // @ts-expect-error fastify-cookie
+  // fastify-cookie
   const cookie = req.cookies?.[env.CSRF_COOKIE_NAME];
   if (!cookie || !header || cookie !== header) {
     const err: any = new Error('CSRF token missing or invalid');

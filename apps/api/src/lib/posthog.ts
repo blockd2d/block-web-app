@@ -16,5 +16,5 @@ export async function capture(event: string, distinctId: string, properties: Rec
 }
 
 export async function shutdownPosthog() {
-  if (client) await client.shutdownAsync();
+  if (client) await client.shutdown();
 }
