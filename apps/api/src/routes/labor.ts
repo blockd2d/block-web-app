@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed, requireManager } from './_helpers';
 import { audit } from '../lib/audit';
-import { PosthogEvents } from '@block/shared';
+import { PosthogEvents } from '@blockd2d/shared';
 import { capture } from '../lib/posthog';
 
 async function getLaborerIdForProfile(service: any, org_id: string, profile_id: string) {

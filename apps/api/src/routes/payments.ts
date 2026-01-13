@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import Stripe from 'stripe';
-import { PaymentCreateIntentSchema, PosthogEvents } from '@block/shared';
+import { PaymentCreateIntentSchema, PosthogEvents } from '@blockd2d/shared';
 import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed, requireManager } from './_helpers';
 import { env } from '../lib/env';

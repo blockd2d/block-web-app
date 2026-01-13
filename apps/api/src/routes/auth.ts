@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
-import { LoginSchema } from '@block/shared';
+import { LoginSchema } from '@blockd2d/shared';
 import { createAnonClient, createServiceClient } from '../lib/supabase';
 import { clearAuthCookies, refreshSession, setAuthCookies } from '../lib/auth';
 import { verifyTurnstile } from '../lib/turnstile';
 import { env } from '../lib/env';
 import { capture } from '../lib/posthog';
-import { PosthogEvents } from '@block/shared';
+import { PosthogEvents } from '@blockd2d/shared';
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/login', async (req, reply) => {

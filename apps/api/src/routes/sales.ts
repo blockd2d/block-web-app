@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { PosthogEvents, SaleCreateSchema } from '@block/shared';
+import { PosthogEvents, SaleCreateSchema } from '@blockd2d/shared';
 import { createServiceClient } from '../lib/supabase';
 import { audit } from '../lib/audit';
 import { capture } from '../lib/posthog';

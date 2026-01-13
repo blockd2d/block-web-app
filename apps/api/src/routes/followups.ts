@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { FollowupCreateSchema } from '@block/shared';
+import { FollowupCreateSchema } from '@blockd2d/shared';
 import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed, requireManager } from './_helpers';
 import { audit } from '../lib/audit';

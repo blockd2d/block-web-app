@@ -3,7 +3,7 @@ import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed, requireManager } from './_helpers';
 import { audit } from '../lib/audit';
 import { capture } from '../lib/posthog';
-import { PosthogEvents } from '@block/shared';
+import { PosthogEvents } from '@blockd2d/shared';
 
 async function getRepIdForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service.from('reps').select('id').eq('org_id', org_id).eq('profile_id', profile_id).single();

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { ClusterSetCreateSchema, PosthogEvents } from '@block/shared';
+import { ClusterSetCreateSchema, PosthogEvents } from '@blockd2d/shared';
 import { createServiceClient } from '../lib/supabase';
 import { requireManager } from './_helpers';
 import { audit } from '../lib/audit';

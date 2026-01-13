@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { InviteAcceptSchema, InviteCreateSchema, PosthogEvents } from '@block/shared';
+import { InviteAcceptSchema, InviteCreateSchema, PosthogEvents } from '@blockd2d/shared';
 import { createAnonClient, createServiceClient } from '../lib/supabase';
 import { requireManager, requireRoles } from './_helpers';
 import { env } from '../lib/env';

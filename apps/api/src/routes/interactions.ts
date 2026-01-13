@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { InteractionCreateSchema, PosthogEvents } from '@block/shared';
+import { InteractionCreateSchema, PosthogEvents } from '@blockd2d/shared';
 import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed } from './_helpers';
 import { audit } from '../lib/audit';

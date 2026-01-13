@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { dbscanCluster, type DbPoint } from '@block/shared';
+import { dbscanCluster, type DbPoint } from '@blockd2d/shared';
 import { stringify } from 'csv-stringify/sync';
 import PDFDocument from 'pdfkit';
 

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { RepUpsertSchema, PosthogEvents } from '@block/shared';
+import { RepUpsertSchema, PosthogEvents } from '@blockd2d/shared';
 import { z } from 'zod';
 import { createServiceClient } from '../lib/supabase';
 import { requireAnyAuthed, requireManager, requireRoles } from './_helpers';
