@@ -1,9 +1,11 @@
 {
   "name": "@blockd2d/shared",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/blockd2d/<REPO_NAME>"
+    "url": "https://github.com/blockd2d/block-web-app"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean --out-dir dist",
