@@ -6,7 +6,7 @@
     "dev": "turbo run dev --parallel --filter=@block/api --filter=@block/web",
     "build": "turbo run build --filter=@block/api --filter=@block/web",
     "lint": "turbo run lint --filter=@block/api --filter=@block/web",
-    "typecheck": "turbo run typecheck --filter=@block/shared --filter=@block/api --filter=@block/web",
+    "typecheck": "turbo run typecheck --filter=@blockd2d/shared --filter=@block/api --filter=@block/web",
     "format": "prettier -w .",
     "zip": "node scripts/zip-repo.mjs"
   },

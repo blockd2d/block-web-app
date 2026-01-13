@@ -15,7 +15,7 @@
     "seed:dev": "tsx src/scripts/seed-dev.ts"
   },
   "dependencies": {
-    "@blockd2d/shared": "^0.1.1",
+    "@blockd2d/shared": "^0.1.2",
     "@fastify/cookie": "^9.4.0",
     "@fastify/cors": "^9.0.0",
     "@fastify/formbody": "^8.0.1",

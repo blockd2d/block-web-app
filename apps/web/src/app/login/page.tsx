@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { LoginSchema } from '@block/shared';
+import { LoginSchema } from '@blockd2d/shared';
 import { api } from '../../lib/api';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';

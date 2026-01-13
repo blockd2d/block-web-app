@@ -321,6 +321,7 @@ declare const PosthogEvents: {
     readonly CLUSTERSET_CREATED: "clusterset_created";
     readonly CLUSTERSET_COMPLETED: "clusterset_completed";
     readonly CLUSTER_ASSIGNED: "cluster_assigned";
+    readonly CONTRACT_SIGNED: "contract_signed";
     readonly INTERACTION_LOGGED: "interaction_logged";
     readonly SALE_CREATED: "sale_created";
     readonly CONTRACT_GENERATED: "contract_generated";

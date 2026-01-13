@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@block/shared": "^0.1.1",
+    "@blockd2d/shared": "^0.1.2",
     "next": "^14.2.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
