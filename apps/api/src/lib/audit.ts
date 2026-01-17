@@ -1,4 +1,4 @@
-import { createServiceClient } from './supabase';
+import { createServiceClient } from './supabase.js';
 
 export async function audit(org_id: string, actor_profile_id: string | null, action: string, entity: { type?: string; id?: string | null } = {}, meta: any = {}) {
   const service = createServiceClient();

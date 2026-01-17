@@ -1,6 +1,6 @@
 import { env } from './lib/env.js';
-import { buildServer } from './server';
-import { shutdownPosthog } from './lib/posthog';
+import { buildServer } from './server.js';
+import { shutdownPosthog } from './lib/posthog.js';
 
 const app = buildServer();
 

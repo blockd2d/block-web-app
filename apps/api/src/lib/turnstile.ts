@@ -1,4 +1,4 @@
-import { env } from './env';
+import { env } from './env.js';
 
 export async function verifyTurnstile(opts: { token?: string | null; ip?: string | null; bypass?: boolean }) {
   if (opts.bypass) return { ok: true, skipped: true, bypass: true };

@@ -1,6 +1,6 @@
-import { env } from './lib/env';
-import { createServiceClient } from './lib/supabase';
-import { processJob } from './worker/processors';
+import { env } from './lib/env.js';
+import { createServiceClient } from './lib/supabase.js';
+import { processJob } from './worker/processors.js';
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));

@@ -1,5 +1,5 @@
 import { PostHog } from 'posthog-node';
-import { env } from './env';
+import { env } from './env.js';
 
 let client: PostHog | null = null;
 

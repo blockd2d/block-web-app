@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { env } from './env';
-import { createAnonClient, createServiceClient } from './supabase';
+import { env } from './env.js';
+import { createAnonClient, createServiceClient } from './supabase.js';
 
 export type Role = 'admin' | 'manager' | 'rep' | 'labor';
 

@@ -1,9 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import Stripe from 'stripe';
-import { Twilio } from 'twilio';
-import { validateRequest } from 'twilio/lib/webhooks/webhooks';
-import { createServiceClient } from '../lib/supabase';
-import { env } from '../lib/env';
+import twilio from 'twilio';
+import { createServiceClient } from '../lib/supabase.js';
+import { env } from '../lib/env.js';
 
 function stripeClient() {
   if (!env.STRIPE_SECRET_KEY) return null;
@@ -12,7 +11,7 @@ function stripeClient() {
 
 function twilioClient() {
   if (!env.TWILIO_ACCOUNT_SID || !env.TWILIO_AUTH_TOKEN) return null;
-  return new Twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
+  return twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
 }
 
 function fullWebhookUrl(req: any) {
@@ -33,14 +32,6 @@ async function getOrgIdForTwilioNumber(service: any, toNumber: string | null | u
   return data?.org_id || null;
 }
 
-/**
- * Alias routes required by the API contract:
- * - GET /v1/me (alias of /v1/auth/me)
- * - POST /v1/twilio/inbound (alias of /v1/messages/twilio/inbound)
- * - POST /v1/stripe/webhook (alias of /v1/payments/stripe/webhook)
- *
- * These exist to keep webhook URLs stable even if we refactor route grouping.
- */
 export async function aliasRoutes(app: FastifyInstance) {
   app.get('/me', async (req, reply) => {
     if (!req.ctx) return reply.code(401).send({ error: 'Unauthorized' });
@@ -62,7 +53,15 @@ export async function aliasRoutes(app: FastifyInstance) {
     if (env.TWILIO_AUTH_TOKEN) {
       const signature = req.headers['x-twilio-signature'];
       if (!signature || typeof signature !== 'string') return reply.code(400).send('missing signature');
-      const ok = validateRequest(env.TWILIO_AUTH_TOKEN, signature, fullWebhookUrl(req), req.body || {});
+
+      // twilio.validateRequest(authToken, signature, url, params)
+      const ok = twilio.validateRequest(
+        env.TWILIO_AUTH_TOKEN,
+        signature,
+        fullWebhookUrl(req),
+        (req.body as any) || {}
+      );
+
       if (!ok) return reply.code(403).send('invalid signature');
     }
 
@@ -77,7 +76,6 @@ export async function aliasRoutes(app: FastifyInstance) {
     const org_id = await getOrgIdForTwilioNumber(service, to);
     if (!org_id) return reply.code(404).send('unknown org');
 
-    // Upsert thread
     const { data: existing } = await service
       .from('message_threads')
       .select('*')

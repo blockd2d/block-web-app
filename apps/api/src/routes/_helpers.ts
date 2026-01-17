@@ -1,5 +1,5 @@
 import type { FastifyRequest } from 'fastify';
-import { requireRole, type AuthContext, type Role } from '../lib/auth';
+import { requireRole, type AuthContext, type Role } from '../lib/auth.js';
 
 export function requireAuth(req: FastifyRequest): AuthContext {
   if (!req.ctx) {
