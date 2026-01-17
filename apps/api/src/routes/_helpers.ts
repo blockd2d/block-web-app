@@ -1,3 +1,5 @@
+//helpers
+
 import type { FastifyRequest } from 'fastify';
 import { requireRole, type AuthContext, type Role } from '../lib/auth.js';
 
