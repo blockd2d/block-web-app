@@ -57,6 +57,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.4
         version: 2.90.1
+      csv-parse:
+        specifier: ^6.1.0
+        version: 6.1.0
       csv-stringify:
         specifier: ^6.5.1
         version: 6.6.0

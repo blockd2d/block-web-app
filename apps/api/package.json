@@ -7,6 +7,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "postinstall": "prisma generate",
     "build": "tsc -p tsconfig.json --outDir dist",
     "start": "node dist/index.js",
     "worker:dev": "tsx watch src/worker.ts",
@@ -22,6 +23,7 @@
     "@fastify/rate-limit": "^9.0.0",
     "@prisma/client": "^7.2.0",
     "@supabase/supabase-js": "^2.45.4",
+    "csv-parse": "^6.1.0",
     "csv-stringify": "^6.5.1",
     "fastify": "^4.28.1",
     "pdfkit": "^0.15.0",
