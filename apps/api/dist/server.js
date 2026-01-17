@@ -3,7 +3,7 @@ import cookie from '@fastify/cookie';
 import formbody from '@fastify/formbody';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { env } from './lib/env';
+import { env } from './lib/env.js';
 import { buildAuthContext, requireCsrf } from './lib/auth';
 import { authRoutes } from './routes/auth';
 import { invitesRoutes } from './routes/invites';
