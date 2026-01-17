@@ -2,6 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { dbscanCluster, type DbPoint } from '@blockd2d/shared';
 import { stringify } from 'csv-stringify/sync';
 import PDFDocument from 'pdfkit';
+import { env } from "../lib/env"
+import twilio from 'twilio';
+
+const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
 
 const PALETTE = [
   '#E74C3C','#E67E22','#F1C40F','#2ECC71','#1ABC9C','#3498DB','#9B59B6','#34495E',
