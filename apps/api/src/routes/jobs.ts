@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { audit } from '../lib/audit';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { audit } from '../lib/audit.js';
 import { PosthogEvents } from '@blockd2d/shared';
-import { capture } from '../lib/posthog';
+import { capture } from '../lib/posthog.js';
 
 function parseDataUrl(dataUrl: string) {
   const m = /^data:([^;]+);base64,(.+)$/i.exec(dataUrl || '');

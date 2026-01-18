@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { InviteAcceptSchema, InviteCreateSchema, PosthogEvents } from '@blockd2d/shared';
-import { createAnonClient, createServiceClient } from '../lib/supabase';
-import { requireManager, requireRoles } from './_helpers';
-import { env } from '../lib/env';
-import { audit } from '../lib/audit';
-import { capture } from '../lib/posthog';
-import { setAuthCookies } from '../lib/auth';
+import { createAnonClient, createServiceClient } from '../lib/supabase.js';
+import { requireManager, requireRoles } from './_helpers.js';
+import { env } from '../lib/env.js';
+import { audit } from '../lib/audit.js';
+import { capture } from '../lib/posthog.js';
+import { setAuthCookies } from '../lib/auth.js';
 
 // Node doesn't have crypto.getRandomValues in all contexts; fall back:
 function randHex(len = 32) {

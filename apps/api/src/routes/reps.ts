@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { RepUpsertSchema, PosthogEvents } from '@blockd2d/shared';
 import { z } from 'zod';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager, requireRoles } from './_helpers';
-import { audit } from '../lib/audit';
-import { capture } from '../lib/posthog';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager, requireRoles } from './_helpers.js';
+import { audit } from '../lib/audit.js';
+import { capture } from '../lib/posthog.js';
 
 async function getRepIdForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service.from('reps').select('*').eq('org_id', org_id).eq('profile_id', profile_id).single();

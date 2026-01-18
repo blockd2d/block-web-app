@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { audit } from '../lib/audit';
-import { env } from '../lib/env';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { audit } from '../lib/audit.js';
+import { env } from '../lib/env.js';
 
 const SendSchema = z.object({
   thread_id: z.string().uuid().optional(),

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { createServiceClient } from '../lib/supabase';
-import { requireManager } from './_helpers';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireManager } from './_helpers.js';
 
 const CreateExportSchema = z.object({
   type: z.enum(['assignments', 'sales']).default('assignments'),

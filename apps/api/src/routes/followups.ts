@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { FollowupCreateSchema } from '@blockd2d/shared';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { audit } from '../lib/audit';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { audit } from '../lib/audit.js';
 
 async function getRepIdForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service.from('reps').select('id').eq('org_id', org_id).eq('profile_id', profile_id).single();

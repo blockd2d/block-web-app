@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed } from './_helpers';
-import { getRangeWindow } from './_range';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed } from './_helpers.js';
+import { getRangeWindow } from './_range.js';
 
 async function getRepIdForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service

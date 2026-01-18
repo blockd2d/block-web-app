@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
 
 export async function propertiesRoutes(app: FastifyInstance) {
   // Managers: can page large datasets with bbox and cursor

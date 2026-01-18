@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 import { ClusterSetCreateSchema, PosthogEvents } from '@blockd2d/shared';
-import { createServiceClient } from '../lib/supabase';
-import { requireManager } from './_helpers';
-import { audit } from '../lib/audit';
-import { capture } from '../lib/posthog';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireManager } from './_helpers.js';
+import { audit } from '../lib/audit.js';
+import { capture } from '../lib/posthog.js';
 
 export async function clusterSetsRoutes(app: FastifyInstance) {
   app.get('/', async (req, reply) => {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { createServiceClient } from '../lib/supabase';
-import { requireManager } from './_helpers';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireManager } from './_helpers.js';
 
 export async function auditRoutes(app: FastifyInstance) {
   app.get('/', async (req, reply) => {

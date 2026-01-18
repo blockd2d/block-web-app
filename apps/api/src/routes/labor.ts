@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { audit } from '../lib/audit';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { audit } from '../lib/audit.js';
 import { PosthogEvents } from '@blockd2d/shared';
-import { capture } from '../lib/posthog';
+import { capture } from '../lib/posthog.js';
 
 async function getLaborerIdForProfile(service: any, org_id: string, profile_id: string) {
   const { data } = await service.from('laborers').select('id').eq('org_id', org_id).eq('profile_id', profile_id).single();

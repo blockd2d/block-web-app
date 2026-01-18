@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { PosthogEvents, SaleCreateSchema } from '@blockd2d/shared';
-import { createServiceClient } from '../lib/supabase';
-import { audit } from '../lib/audit';
-import { capture } from '../lib/posthog';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { getRangeWindow } from './_range';
+import { createServiceClient } from '../lib/supabase.js';
+import { audit } from '../lib/audit.js';
+import { capture } from '../lib/posthog.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { getRangeWindow } from './_range.js';
 
 function parseDataUrl(dataUrl: string) {
   // data:image/png;base64,....

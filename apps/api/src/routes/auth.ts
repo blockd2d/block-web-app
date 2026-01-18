@@ -1,10 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { LoginSchema } from '@blockd2d/shared';
-import { createAnonClient, createServiceClient } from '../lib/supabase';
-import { clearAuthCookies, refreshSession, setAuthCookies } from '../lib/auth';
-import { verifyTurnstile } from '../lib/turnstile';
-import { env } from '../lib/env';
-import { capture } from '../lib/posthog';
+import { createAnonClient, createServiceClient } from '../lib/supabase.js';
+import { clearAuthCookies, refreshSession, setAuthCookies } from '../lib/auth.js';
+import { verifyTurnstile } from '../lib/turnstile.js';
+import { env } from '../lib/env.js';
+import { capture } from '../lib/posthog.js';
 import { PosthogEvents } from '@blockd2d/shared';
 
 export async function authRoutes(app: FastifyInstance) {

@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import Stripe from 'stripe';
 import { PaymentCreateIntentSchema, PosthogEvents } from '@blockd2d/shared';
-import { createServiceClient } from '../lib/supabase';
-import { requireAnyAuthed, requireManager } from './_helpers';
-import { env } from '../lib/env';
-import { audit } from '../lib/audit';
-import { capture } from '../lib/posthog';
+import { createServiceClient } from '../lib/supabase.js';
+import { requireAnyAuthed, requireManager } from './_helpers.js';
+import { env } from '../lib/env.js';
+import { audit } from '../lib/audit.js';
+import { capture } from '../lib/posthog.js';
 
 function stripeClient() {
   if (!env.STRIPE_SECRET_KEY) return null;
