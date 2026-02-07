@@ -120,7 +120,7 @@ export default function RepsPage() {
             <Button
               key={r.id}
               size="sm"
-              variant={range === r.id ? 'default' : 'ghost'}
+              variant={range === r.id ? 'primary' : 'ghost'}
               className="rounded-lg"
               onClick={() => setRange(r.id)}
             >

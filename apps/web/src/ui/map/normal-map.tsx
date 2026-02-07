@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useRef } from 'react';
-import { drawProceduralBasemap, type Viewport } from '../../lib/basemap';
+import { useEffect, useMemo, useRef } from "react";
+import { drawProceduralBasemap, type Viewport } from "../../lib/basemap";
 
 type Overlay = {
   id: string;
@@ -32,16 +32,20 @@ export function NormalMap({ overlays }: { overlays: Overlay[] }) {
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     function draw() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
       const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
+
       canvas.width = Math.floor(rect.width * dpr);
       canvas.height = Math.floor(rect.height * dpr);
+
+      // Scale drawing operations back into CSS pixels
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const vp = { ...viewport, width: rect.width, height: rect.height };
@@ -50,6 +54,7 @@ export function NormalMap({ overlays }: { overlays: Overlay[] }) {
       // Overlays
       for (const o of overlays || []) {
         if (!o.hull?.coordinates?.[0]) continue;
+
         const ring = o.hull.coordinates[0] as number[][];
         ctx.beginPath();
         for (let i = 0; i < ring.length; i++) {
@@ -59,9 +64,11 @@ export function NormalMap({ overlays }: { overlays: Overlay[] }) {
           else ctx.lineTo(x, y);
         }
         ctx.closePath();
+
         ctx.globalAlpha = 0.18;
         ctx.fillStyle = o.color;
         ctx.fill();
+
         ctx.globalAlpha = 1;
         ctx.strokeStyle = o.color;
         ctx.lineWidth = 2;
@@ -78,9 +85,10 @@ export function NormalMap({ overlays }: { overlays: Overlay[] }) {
     }
 
     draw();
+
     const onResize = () => draw();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, [overlays, viewport]);
 
   return <canvas ref={canvasRef} className="h-[520px] w-full rounded-xl border border-border" />;

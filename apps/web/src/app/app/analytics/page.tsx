@@ -1,12 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { AppShell } from '../../../ui/shell';
-import { TimeRangeToggle } from '../../../ui/time-range-toggle';
-import { StatCard } from '../../../ui/stat-card';
-import { api } from '../../../lib/api';
-import { fmtCurrency, fmtNumber, fmtPercent, TimeRange } from '../../../lib/format';
-import { Button } from '../../../ui/button';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+
+import { AppShell } from "../../../ui/shell";
+import { TimeRangeToggle } from "../../../ui/time-range-toggle";
+import { StatCard } from "../../../ui/stat-card";
+import { Button } from "../../../ui/button";
+
+import { api } from "../../../lib/api";
+import { fmtCurrency, fmtNumber, fmtPercent, TimeRange } from "../../../lib/format";
 
 import {
   LineChart,
@@ -17,8 +20,8 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   BarChart,
-  Bar
-} from 'recharts';
+  Bar,
+} from "recharts";
 
 type Summary = {
   range: TimeRange;
@@ -61,7 +64,9 @@ type LeaderRow = {
 };
 
 export default function AnalyticsPage() {
-  const [range, setRange] = React.useState<TimeRange>('week');
+  const router = useRouter();
+
+  const [range, setRange] = React.useState<TimeRange>("week");
   const [summary, setSummary] = React.useState<Summary | null>(null);
   const [series, setSeries] = React.useState<TimeseriesRow[]>([]);
   const [leaderboard, setLeaderboard] = React.useState<LeaderRow[]>([]);
@@ -69,6 +74,8 @@ export default function AnalyticsPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       setLoading(true);
       setError(null);
@@ -76,25 +83,34 @@ export default function AnalyticsPage() {
         const [rSummary, rSeries, rLeader] = await Promise.all([
           api(`/v1/analytics/summary?range=${range}`),
           api(`/v1/analytics/timeseries?range=${range}`),
-          api(`/v1/analytics/leaderboard?range=${range}`)
+          api(`/v1/analytics/leaderboard?range=${range}`),
         ]);
-        setSummary(rSummary);
-        setSeries(rSeries.items || []);
-        setLeaderboard(rLeader.items || []);
+
+        if (cancelled) return;
+
+        setSummary(rSummary as Summary);
+        setSeries((rSeries?.items || []) as TimeseriesRow[]);
+        setLeaderboard((rLeader?.items || []) as LeaderRow[]);
       } catch (e: any) {
-        setError(e?.message || 'Failed to load analytics');
+        if (cancelled) return;
+        setError(e?.message || "Failed to load analytics");
       } finally {
+        if (cancelled) return;
         setLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [range]);
 
   const funnel = summary
     ? [
-        { stage: 'Doors', value: summary.totals.doors },
-        { stage: 'Leads', value: summary.totals.leads },
-        { stage: 'Quotes', value: summary.totals.quotes },
-        { stage: 'Sold', value: summary.totals.sold }
+        { stage: "Doors", value: summary.totals.doors },
+        { stage: "Leads", value: summary.totals.leads },
+        { stage: "Quotes", value: summary.totals.quotes },
+        { stage: "Sold", value: summary.totals.sold },
       ]
     : [];
 
@@ -103,20 +119,30 @@ export default function AnalyticsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TimeRangeToggle value={range} onChange={setRange} />
-          <Button variant="secondary" onClick={() => (window.location.href = '/app/dashboard')}>
+          <Button variant="secondary" onClick={() => router.push("/app/dashboard")}>
             Back to dashboard
           </Button>
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive shadow-soft">{error}</div>
+          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive shadow-soft">
+            {error}
+          </div>
         ) : null}
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="Doors / hr" value={loading ? '…' : fmtNumber(summary?.derived.doors_per_hour, 1)} hint="Doors ÷ hours" />
-          <StatCard label="Close rate" value={loading ? '…' : fmtPercent(summary?.derived.close_rate, 1)} hint="Sold ÷ leads" />
-          <StatCard label="Revenue" value={loading ? '…' : fmtCurrency(summary?.totals.revenue)} />
-          <StatCard label="Payments" value={loading ? '…' : fmtCurrency(summary?.totals.payments_collected)} />
+          <StatCard
+            label="Doors / hr"
+            value={loading ? "…" : fmtNumber(summary?.derived.doors_per_hour, 1)}
+            hint="Doors ÷ hours"
+          />
+          <StatCard
+            label="Close rate"
+            value={loading ? "…" : fmtPercent(summary?.derived.close_rate, 1)}
+            hint="Sold ÷ leads"
+          />
+          <StatCard label="Revenue" value={loading ? "…" : fmtCurrency(summary?.totals.revenue)} />
+          <StatCard label="Payments" value={loading ? "…" : fmtCurrency(summary?.totals.payments_collected)} />
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -134,13 +160,13 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={series} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                       <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                      <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
                       <Tooltip
                         contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 12
+                          background: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 12,
                         }}
                       />
                       <Line type="monotone" dataKey="doors" stroke="hsl(var(--primary))" dot={false} strokeWidth={2} />
@@ -168,13 +194,13 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={funnel} margin={{ top: 10, right: 10, bottom: 10, left: 0 }}>
                       <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
-                      <XAxis dataKey="stage" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <XAxis dataKey="stage" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
                       <Tooltip
                         contentStyle={{
-                          background: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: 12
+                          background: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 12,
                         }}
                       />
                       <Bar dataKey="value" fill="hsl(var(--primary))" radius={[10, 10, 10, 10]} />
@@ -219,7 +245,10 @@ export default function AnalyticsPage() {
                       <td className="px-3 py-2">{r.sold}</td>
                       <td className="px-3 py-2">{fmtCurrency(r.revenue)}</td>
                       <td className="px-3 py-2">{fmtNumber(r.score)}</td>
-                      <td className="px-3 py-2 text-mutedForeground">{r.delta_score >= 0 ? '+' : ''}{fmtNumber(r.delta_score)}</td>
+                      <td className="px-3 py-2 text-mutedForeground">
+                        {r.delta_score >= 0 ? "+" : ""}
+                        {fmtNumber(r.delta_score)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

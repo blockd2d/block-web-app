@@ -1,14 +1,16 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { AppShell } from '../../../ui/shell';
-import { StatCard } from '../../../ui/stat-card';
-import { TimeRangeToggle } from '../../../ui/time-range-toggle';
-import { api } from '../../../lib/api';
-import { fmtCurrency, fmtNumber, fmtPercent, TimeRange } from '../../../lib/format';
-import { OpsMap } from '../../../ui/map/ops-map';
-import { Button } from '../../../ui/button';
-import Link from 'next/link';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { AppShell } from "../../../ui/shell";
+import { StatCard } from "../../../ui/stat-card";
+import { TimeRangeToggle } from "../../../ui/time-range-toggle";
+import { api } from "../../../lib/api";
+import { fmtCurrency, fmtNumber, fmtPercent, TimeRange } from "../../../lib/format";
+import { OpsMap } from "../../../ui/map/ops-map";
+import { Button } from "../../../ui/button";
 
 type ClusterSet = { id: string; name: string; status: string; created_at: string };
 
@@ -59,7 +61,9 @@ type ClusterInspector = {
 };
 
 export default function DashboardPage() {
-  const [range, setRange] = React.useState<TimeRange>('week');
+  const router = useRouter();
+
+  const [range, setRange] = React.useState<TimeRange>("week");
   const [clusterSets, setClusterSets] = React.useState<ClusterSet[]>([]);
   const [activeClusterSetId, setActiveClusterSetId] = React.useState<string | null>(null);
   const [selectedClusterId, setSelectedClusterId] = React.useState<string | null>(null);
@@ -71,18 +75,28 @@ export default function DashboardPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       try {
-        const rReps = await api('/v1/reps');
-        setReps(rReps.items || rReps.reps || []);
-        const r = await api('/v1/cluster-sets');
-        const items: ClusterSet[] = (r.items || []).filter((x: any) => x.status === 'complete');
+        const rReps = await api("/v1/reps");
+        if (cancelled) return;
+        setReps((rReps.items || rReps.reps || []) as RepMini[]);
+
+        const r = await api("/v1/cluster-sets");
+        if (cancelled) return;
+
+        const items: ClusterSet[] = (r.items || []).filter((x: any) => x.status === "complete");
         setClusterSets(items);
         setActiveClusterSetId(items[0]?.id ?? null);
       } catch (e: any) {
-        setError(e?.message || 'Failed to load cluster sets');
+        if (!cancelled) setError(e?.message || "Failed to load cluster sets");
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load selected cluster inspector (compact card)
@@ -91,7 +105,9 @@ export default function DashboardPage() {
       setClusterInspector(null);
       return;
     }
+
     let cancelled = false;
+
     (async () => {
       setClusterInspectorLoading(true);
       try {
@@ -103,6 +119,7 @@ export default function DashboardPage() {
         if (!cancelled) setClusterInspectorLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -111,18 +128,28 @@ export default function DashboardPage() {
   const repNameById = React.useMemo(() => new Map(reps.map((r) => [r.id, r.name])), [reps]);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const r = await api(`/v1/dashboard/overview?range=${range}${activeClusterSetId ? `&cluster_set_id=${encodeURIComponent(activeClusterSetId)}` : ''}`);
-        setOverview(r);
+        const r = await api(
+          `/v1/dashboard/overview?range=${range}${
+            activeClusterSetId ? `&cluster_set_id=${encodeURIComponent(activeClusterSetId)}` : ""
+          }`
+        );
+        if (!cancelled) setOverview(r as DashboardOverview);
       } catch (e: any) {
-        setError(e?.message || 'Failed to load dashboard');
+        if (!cancelled) setError(e?.message || "Failed to load dashboard");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [range, activeClusterSetId]);
 
   return (
@@ -132,14 +159,14 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <TimeRangeToggle value={range} onChange={setRange} />
             <div className="hidden text-sm text-mutedForeground md:block">
-              Ops map + KPIs for {range === 'week' ? 'this week' : range === 'month' ? 'this month' : 'all time'}
+              Ops map + KPIs for {range === "week" ? "this week" : range === "month" ? "this month" : "all time"}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <select
               className="h-10 rounded-xl border border-input bg-card px-3 text-sm text-foreground shadow-soft"
-              value={activeClusterSetId ?? ''}
+              value={activeClusterSetId ?? ""}
               onChange={(e) => setActiveClusterSetId(e.target.value || null)}
             >
               {clusterSets.length === 0 ? <option value="">No cluster sets</option> : null}
@@ -161,9 +188,7 @@ export default function DashboardPage() {
         </div>
 
         {error ? (
-          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive shadow-soft">
-            {error}
-          </div>
+          <div className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive shadow-soft">{error}</div>
         ) : null}
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -178,10 +203,12 @@ export default function DashboardPage() {
                 </div>
                 {selectedClusterId ? (
                   <div className="text-xs text-mutedForeground">
-                    Selected cluster: <span className="font-medium text-foreground">{selectedClusterId.slice(0, 6)}…</span>
+                    Selected cluster:{" "}
+                    <span className="font-medium text-foreground">{selectedClusterId.slice(0, 6)}…</span>
                   </div>
                 ) : null}
               </div>
+
               <OpsMap
                 clusterSetId={activeClusterSetId}
                 selectedClusterId={selectedClusterId}
@@ -224,8 +251,8 @@ export default function DashboardPage() {
                       <div className="text-xs text-mutedForeground">Assigned rep</div>
                       <div className="truncate text-base font-semibold">
                         {clusterInspector.summary.assigned_rep_id
-                          ? repNameById.get(clusterInspector.summary.assigned_rep_id) ?? 'Assigned'
-                          : 'Unassigned'}
+                          ? repNameById.get(clusterInspector.summary.assigned_rep_id) ?? "Assigned"
+                          : "Unassigned"}
                       </div>
                     </div>
                     <div>
@@ -252,15 +279,15 @@ export default function DashboardPage() {
             ) : null}
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-2">
-              <StatCard label="Doors / hr" value={loading ? '…' : fmtNumber(overview?.derived.doors_per_hour, 1)} hint="Doors ÷ hours" />
-              <StatCard label="Close rate" value={loading ? '…' : fmtPercent(overview?.derived.close_rate, 1)} hint="Sold ÷ leads" />
-              <StatCard label="Leads" value={loading ? '…' : fmtNumber(overview?.totals.leads)} />
-              <StatCard label="Quotes" value={loading ? '…' : fmtNumber(overview?.totals.quotes)} />
-              <StatCard label="Sold" value={loading ? '…' : fmtNumber(overview?.totals.sold)} />
-              <StatCard label="Revenue" value={loading ? '…' : fmtCurrency(overview?.totals.revenue)} />
-              <StatCard label="Follow-ups due" value={loading ? '…' : fmtNumber(overview?.totals.followups_due)} />
-              <StatCard label="Jobs completed" value={loading ? '…' : fmtNumber(overview?.totals.jobs_completed)} />
-              <StatCard label="Payments collected" value={loading ? '…' : fmtCurrency(overview?.totals.payments_collected)} />
+              <StatCard label="Doors / hr" value={loading ? "…" : fmtNumber(overview?.derived.doors_per_hour, 1)} hint="Doors ÷ hours" />
+              <StatCard label="Close rate" value={loading ? "…" : fmtPercent(overview?.derived.close_rate, 1)} hint="Sold ÷ leads" />
+              <StatCard label="Leads" value={loading ? "…" : fmtNumber(overview?.totals.leads)} />
+              <StatCard label="Quotes" value={loading ? "…" : fmtNumber(overview?.totals.quotes)} />
+              <StatCard label="Sold" value={loading ? "…" : fmtNumber(overview?.totals.sold)} />
+              <StatCard label="Revenue" value={loading ? "…" : fmtCurrency(overview?.totals.revenue)} />
+              <StatCard label="Follow-ups due" value={loading ? "…" : fmtNumber(overview?.totals.followups_due)} />
+              <StatCard label="Jobs completed" value={loading ? "…" : fmtNumber(overview?.totals.jobs_completed)} />
+              <StatCard label="Payments collected" value={loading ? "…" : fmtCurrency(overview?.totals.payments_collected)} />
             </div>
 
             <div className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-soft">
@@ -269,7 +296,8 @@ export default function DashboardPage() {
                   <div className="text-sm font-semibold">Rep vs Team Average</div>
                   <div className="text-xs text-mutedForeground">Top + bottom performers for the selected range</div>
                 </div>
-                <Button variant="ghost" onClick={() => (window.location.href = '/app/analytics')}>
+
+                <Button variant="ghost" onClick={() => router.push("/app/analytics")}>
                   View analytics
                 </Button>
               </div>

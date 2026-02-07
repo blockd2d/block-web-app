@@ -20,3 +20,17 @@ export function rangeLabel(r: TimeRange) {
   if (r === 'month') return 'This month';
   return 'All time';
 }
+
+export function fmtDateTimeLocal(value?: string | Date | null) {
+  if (!value) return "";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+

@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { api } from '../../../lib/api';
-import { AppShell } from '../../../ui/shell';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { api } from "../../../lib/api";
+import { AppShell } from "../../../ui/shell";
 
 export default function AssignmentsPage() {
+  const router = useRouter();
   const [me, setMe] = useState<any>(null);
 
   useEffect(() => {
-    api.get('/v1/auth/me').then((r) => setMe(r.user)).catch(() => (window.location.href = '/login'));
-  }, []);
+    api
+      .get("/v1/auth/me")
+      .then((r: any) => setMe(r.user))
+      .catch(() => router.replace("/login"));
+  }, [router]);
 
   return (
     <AppShell active="assignments" me={me}>

@@ -384,6 +384,8 @@ export function OpsMap({
       }
 
       const b = map.getBounds();
+      if (!b) return; // or just skip this fetch safely
+
       const bbox = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
 
       try {
@@ -394,15 +396,27 @@ export function OpsMap({
         let cursor: string | null = null;
         let safety = 0;
 
+        type PropertiesResponse = {
+  items?: PropertyRow[];
+  nextCursor?: string | null;
+};
+
         while (safety++ < 20) {
-          const url = `/v1/properties?bbox=${encodeURIComponent(bbox)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
-          const r = await api(url, { signal: abort.signal } as any);
-          const items: PropertyRow[] = r.items || [];
+          const url: string =
+            `/v1/properties?bbox=${encodeURIComponent(bbox)}` +
+            (cursor ? `&cursor=${encodeURIComponent(cursor)}` : "");
+
+          const r: PropertiesResponse = await api(url, { signal: abort.signal } as any);
+
+          const items: PropertyRow[] = r.items ?? [];
           all.push(...items);
-          cursor = r.nextCursor || null;
+
+          cursor = r.nextCursor ?? null;
+
           if (!cursor || items.length === 0) break;
           if (all.length > 8000) break;
         }
+
 
         const feats: any[] = all.map((p) => ({
           type: 'Feature',
