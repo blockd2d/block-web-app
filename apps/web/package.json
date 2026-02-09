@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "@blockd2d/shared": "^0.1.2",
-    "@turf/bbox": "^6.5.0",
-    "@turf/boolean-point-in-polygon": "^6.5.0",
-    "@turf/helpers": "^6.5.0",
+    "@turf/bbox": "^7.3.4",
+    "@turf/boolean-point-in-polygon": "^7.3.4",
+    "@turf/helpers": "^7.3.4",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.6",
     "lucide-react": "^0.451.0",
