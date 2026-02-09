@@ -80,6 +80,7 @@ function titleFromActive(active?: string) {
 }
 
 export function AppShell(props: AppShellProps) {
+  const { children } = props;
   const pathname = usePathname();
   const title = (props as any).title || titleFromActive((props as any).active);
   const role = (props as any).me?.role as string | undefined;
