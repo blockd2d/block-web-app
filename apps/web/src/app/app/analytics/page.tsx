@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { AppShell } from "../../../ui/shell";
 import { TimeRangeToggle } from "../../../ui/time-range-toggle";
 import { StatCard } from "../../../ui/stat-card";
 import { Button } from "../../../ui/button";
@@ -115,7 +114,7 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <AppShell title="Analytics">
+    <div className="p-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TimeRangeToggle value={range} onChange={setRange} />
@@ -261,6 +260,6 @@ export default function AnalyticsPage() {
           )}
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

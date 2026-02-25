@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { AppShell } from '../../../ui/shell';
 import { Input } from '../../../ui/input';
 import { Button } from '../../../ui/button';
 import { api } from '../../../lib/api';
@@ -74,7 +73,7 @@ export default function TerritoriesPage() {
   }
 
   return (
-    <AppShell title="Territories">
+    <div className="p-6">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
@@ -183,6 +182,6 @@ export default function TerritoriesPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

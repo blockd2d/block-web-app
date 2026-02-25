@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '../../../../lib/api';
-import { AppShell } from '../../../../ui/shell';
 import { Button } from '../../../../ui/button';
 import { fmtCurrency } from '../../../../lib/format';
 
@@ -21,7 +20,6 @@ export default function SaleDetailPage() {
   const params = useParams<{ saleId: string }>();
   const saleId = params.saleId;
 
-  const [me, setMe] = useState<any>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -38,13 +36,6 @@ export default function SaleDetailPage() {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    api
-      .get('/v1/auth/me')
-      .then((r) => setMe(r.user))
-      .catch(() => (window.location.href = '/login'));
-  }, []);
 
   useEffect(() => {
     if (!saleId) return;
@@ -64,8 +55,7 @@ export default function SaleDetailPage() {
   );
 
   return (
-    <AppShell active="sales" me={me}>
-      <div className="p-6">
+    <div className="p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm text-mutedForeground">
@@ -264,6 +254,6 @@ export default function SaleDetailPage() {
           </div>
         ) : null}
       </div>
-    </AppShell>
+    </div>
   );
 }

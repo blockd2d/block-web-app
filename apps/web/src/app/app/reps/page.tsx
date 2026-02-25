@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { AppShell } from '@/ui/shell';
 import { api } from '@/lib/api';
 import { Button } from '@/ui/button';
 import { StatCard } from '@/ui/stat-card';
@@ -112,7 +111,7 @@ export default function RepsPage() {
   const bottom = leaderboard.slice().sort((a, b) => (a.sold || 0) - (b.sold || 0)).slice(0, 3);
 
   return (
-    <AppShell title="Reps">
+    <div className="p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm text-mutedForeground">Rep performance and comparisons.</div>
         <div className="inline-flex rounded-xl border border-border bg-card p-1">
@@ -187,9 +186,9 @@ export default function RepsPage() {
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-      <div className="mt-6">
+        <div className="mt-6">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold">All reps</div>
           <div className="text-xs text-mutedForeground">Click a rep for details</div>
@@ -299,6 +298,6 @@ export default function RepsPage() {
           </motion.div>
         ) : null}
       </AnimatePresence>
-    </AppShell>
+    </div>
   );
 }

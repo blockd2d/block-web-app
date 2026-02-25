@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LoginSchema } from '@blockd2d/shared';
 import { api } from '../../lib/api';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
@@ -20,7 +23,9 @@ export default function LoginPage() {
     try {
       const payload = LoginSchema.parse({ email, password, turnstileToken });
       await api.post('/v1/auth/login', payload);
-      window.location.href = '/app/dashboard';
+      const next = searchParams.get('next');
+      const dest = next && next.startsWith('/app') ? next : '/app/dashboard';
+      window.location.href = dest;
     } catch (err: any) {
       setError(err?.message || 'Login failed');
     } finally {
@@ -36,12 +41,30 @@ export default function LoginPage() {
 
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
           <div>
-            <label className="text-sm text-mutedForeground">Email</label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
+            <label className="text-sm text-mutedForeground" htmlFor="email">
+              Email
+            </label>
+            <Input
+              id="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+            />
           </div>
           <div>
-            <label className="text-sm text-mutedForeground">Password</label>
-            <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="••••••••" />
+            <label className="text-sm text-mutedForeground" htmlFor="password">
+              Password
+            </label>
+            <Input
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="••••••••"
+            />
           </div>
 
           {/* Turnstile widget can be added here; for now token is optional */}

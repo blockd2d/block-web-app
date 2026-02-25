@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { AppShell } from '../../../../ui/shell';
 import { Button } from '../../../../ui/button';
 import { Input } from '../../../../ui/input';
 import { api } from '../../../../lib/api';
@@ -176,7 +175,7 @@ export default function TerritoryDetailPage() {
   }
 
   return (
-    <AppShell>
+    <div className="p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-xl font-semibold">Territories</div>
@@ -371,6 +370,6 @@ export default function TerritoryDetailPage() {
           <div className="mt-4 text-sm text-mutedForeground">No clusters in this set yet.</div>
         ) : null}
       </div>
-    </AppShell>
+    </div>
   );
 }

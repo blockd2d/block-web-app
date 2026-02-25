@@ -47,9 +47,11 @@ const NavItem = ({
   );
 };
 
-type AppShellProps =
-  | { title: string; children: React.ReactNode; active?: never; me?: never }
-  | { title?: string; children: React.ReactNode; active?: string; me?: any };
+type AppShellProps = {
+  children: React.ReactNode;
+  me: any;
+  title?: string;
+};
 
 function titleFromActive(active?: string) {
   switch (active) {
@@ -79,11 +81,27 @@ function titleFromActive(active?: string) {
   }
 }
 
+function activeFromPathname(pathname: string) {
+  if (pathname.startsWith('/app/dashboard')) return 'dashboard';
+  if (pathname.startsWith('/app/sales')) return 'sales';
+  if (pathname.startsWith('/app/followups')) return 'followups';
+  if (pathname.startsWith('/app/territories')) return 'territories';
+  if (pathname.startsWith('/app/assignments')) return 'assignments';
+  if (pathname.startsWith('/app/messages')) return 'messages';
+  if (pathname.startsWith('/app/analytics')) return 'analytics';
+  if (pathname.startsWith('/app/reps')) return 'reps';
+  if (pathname.startsWith('/app/exports')) return 'exports';
+  if (pathname.startsWith('/app/audit')) return 'audit';
+  if (pathname.startsWith('/app/settings')) return 'settings';
+  return undefined;
+}
+
 export function AppShell(props: AppShellProps) {
   const { children } = props;
   const pathname = usePathname();
-  const title = (props as any).title || titleFromActive((props as any).active);
-  const role = (props as any).me?.role as string | undefined;
+  const active = activeFromPathname(pathname);
+  const title = props.title || titleFromActive(active);
+  const role = props.me?.role as string | undefined;
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const isRep = role === 'rep';
@@ -110,6 +128,7 @@ export function AppShell(props: AppShellProps) {
                 {canManage || isRep ? <NavItem href="/app/followups" label="Follow-ups" icon={CheckSquare} /> : null}
 
                 {canManage ? <NavItem href="/app/territories" label="Territories" icon={Map} /> : null}
+                {canManage ? <NavItem href="/app/assignments" label="Assignments" icon={Map} /> : null}
                 {canManage ? <NavItem href="/app/messages" label="Messages" icon={MessageCircle} /> : null}
                 {canManage ? <NavItem href="/app/analytics" label="Analytics" icon={BarChart3} /> : null}
                 {canManage ? <NavItem href="/app/reps" label="Reps" icon={Users2} /> : null}
@@ -123,8 +142,11 @@ export function AppShell(props: AppShellProps) {
                   variant="ghost"
                   className="w-full justify-start text-mutedForeground hover:text-foreground"
                   onClick={async () => {
-                    await api('/v1/auth/logout', { method: 'POST' });
-                    window.location.href = '/';
+                    try {
+                      await api('/v1/auth/logout', { method: 'POST' });
+                    } finally {
+                      window.location.href = '/';
+                    }
                   }}
                 >
                   <LogOut className="h-4 w-4" />

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../../lib/api';
-import { AppShell } from '../../../ui/shell';
 import { Button } from '../../../ui/button';
+import { useMe } from '../../../lib/use-me';
 
 function fmt(ts?: string) {
   if (!ts) return '—';
@@ -15,7 +15,7 @@ function fmt(ts?: string) {
 }
 
 export default function ExportsPage() {
-  const [me, setMe] = useState<any>(null);
+  const { me } = useMe();
   const [exportsList, setExportsList] = useState<any[]>([]);
   const [creating, setCreating] = useState<'sales' | 'assignments' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +26,6 @@ export default function ExportsPage() {
   }
 
   useEffect(() => {
-    api
-      .get('/v1/auth/me')
-      .then((r) => setMe(r.user))
-      .catch(() => (window.location.href = '/login'));
     load().catch(() => {});
   }, []);
 
@@ -68,8 +64,7 @@ export default function ExportsPage() {
   }
 
   return (
-    <AppShell active="exports" me={me}>
-      <div className="p-6">
+    <div className="p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Exports</h1>
@@ -126,6 +121,6 @@ export default function ExportsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

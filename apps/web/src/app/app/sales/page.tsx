@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { AppShell } from '../../../ui/shell';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
 import { fmtCurrency } from '../../../lib/format';
+import { useMe } from '../../../lib/use-me';
 
 type Rep = { id: string; name: string };
 
@@ -54,7 +54,7 @@ function fmtAddress(s: SaleRow) {
 }
 
 export default function SalesPage() {
-  const [me, setMe] = useState<any>(null);
+  const { me } = useMe();
   const role = me?.role as string | undefined;
   const canExport = role === 'admin' || role === 'manager';
   const canFilterRep = role === 'admin' || role === 'manager';
@@ -128,16 +128,14 @@ export default function SalesPage() {
     }
   }
 
-  // Auth + initial loads
+  // Load reps once for managers/admins
   useEffect(() => {
-    api
-      .get('/v1/auth/me')
-      .then((r) => {
-        setMe(r.user);
-        if (r.user?.role === 'admin' || r.user?.role === 'manager') loadReps().catch(() => {});
-      })
-      .catch(() => (window.location.href = '/login'));
-  }, []);
+    if (!me) return;
+    if (role === 'admin' || role === 'manager') {
+      loadReps().catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, role]);
 
   // Re-run load on filter changes
   useEffect(() => {
@@ -148,8 +146,7 @@ export default function SalesPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <AppShell active="sales" me={me}>
-      <div className="p-6">
+    <div className="p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Sales</h1>
@@ -354,6 +351,6 @@ export default function SalesPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

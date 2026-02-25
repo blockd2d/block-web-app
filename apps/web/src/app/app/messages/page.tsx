@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { AppShell } from '../../../ui/shell';
 import { api } from '../../../lib/api';
 import { Input } from '../../../ui/input';
 import { Button } from '../../../ui/button';
@@ -186,7 +185,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <AppShell title="Messages">
+    <div className="p-6">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <div className="rounded-2xl border border-border bg-card p-3 shadow-soft">
@@ -415,6 +414,6 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

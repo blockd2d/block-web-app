@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
-import { AppShell } from '../../../ui/shell';
 import { Button } from '../../../ui/button';
+import { useMe } from '../../../lib/use-me';
 
 export default function FollowupsPage() {
-  const [me, setMe] = useState<any>(null);
+  const { me } = useMe();
   const [followups, setFollowups] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,13 +21,11 @@ export default function FollowupsPage() {
   }
 
   useEffect(() => {
-    api.get('/v1/auth/me').then((r) => setMe(r.user)).catch(() => (window.location.href = '/login'));
     load().catch(() => {});
   }, []);
 
   return (
-    <AppShell active="followups" me={me}>
-      <div className="p-6">
+    <div className="p-6">
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Follow-ups</h1>
@@ -59,6 +57,6 @@ export default function FollowupsPage() {
           ) : null}
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

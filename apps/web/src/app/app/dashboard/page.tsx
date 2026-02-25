@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { AppShell } from "../../../ui/shell";
 import { StatCard } from "../../../ui/stat-card";
 import { TimeRangeToggle } from "../../../ui/time-range-toggle";
 import { api } from "../../../lib/api";
@@ -153,7 +152,7 @@ export default function DashboardPage() {
   }, [range, activeClusterSetId]);
 
   return (
-    <AppShell title="Dashboard">
+    <div className="p-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -333,6 +332,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

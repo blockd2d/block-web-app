@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '../../../lib/api';
-import { AppShell } from '../../../ui/shell';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
+import { useMe } from '../../../lib/use-me';
 
 export default function SettingsPage() {
-  const [me, setMe] = useState<any>(null);
+  const { me } = useMe();
   const [invites, setInvites] = useState<any[]>([]);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'manager' | 'admin'>('manager');
@@ -34,16 +34,20 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    api.get('/v1/auth/me').then((r) => setMe(r.user)).catch(() => (window.location.href = '/login'));
     loadInvites().catch(() => {});
   }, []);
 
   return (
-    <AppShell active="settings" me={me}>
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Settings</h1>
-          <p className="mt-1 text-sm text-mutedForeground">Org users and invites (invite-only onboarding)</p>
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold">Settings</h1>
+      <p className="mt-1 text-sm text-mutedForeground">Org users and invites (invite-only onboarding)</p>
 
+      {me?.role !== 'admin' ? (
+        <div className="mt-6 rounded-2xl border border-border bg-card p-4 text-sm text-mutedForeground shadow-soft">
+          You must be an admin to manage organization settings and invites.
+        </div>
+      ) : (
+        <>
           <div className="mt-6 rounded-2xl border border-border bg-card p-4 shadow-soft">
           <div className="text-sm font-semibold">Create invite</div>
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -71,7 +75,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-          <div className="mt-6 rounded-2xl border border-border bg-card shadow-soft">
+        <div className="mt-6 rounded-2xl border border-border bg-card shadow-soft">
           <div className="px-4 py-3 font-semibold">Invites</div>
             <div className="divide-y divide-border">
             {invites.map((i) => (
@@ -93,7 +97,8 @@ export default function SettingsPage() {
               {invites.length === 0 ? <div className="px-4 py-4 text-sm text-mutedForeground">No invites.</div> : null}
           </div>
         </div>
-      </div>
-    </AppShell>
+        </>
+      )}
+    </div>
   );
 }

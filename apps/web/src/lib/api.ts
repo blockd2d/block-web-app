@@ -8,6 +8,18 @@ function apiBase() {
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 }
 
+export class ApiError extends Error {
+  status: number;
+  data: any;
+
+  constructor(message: string, status: number, data: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
 async function request(method: string, path: string, body?: any, init?: RequestInit) {
   const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
   const headers: Record<string, string> = {
@@ -38,7 +50,7 @@ async function request(method: string, path: string, body?: any, init?: RequestI
 
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || 'Request failed';
-    throw new Error(msg);
+    throw new ApiError(msg, res.status, data);
   }
   return data;
 }
