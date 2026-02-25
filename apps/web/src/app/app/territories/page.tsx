@@ -154,24 +154,44 @@ export default function TerritoriesPage() {
 
         <div className="lg:col-span-7">
           <div className="rounded-2xl border border-border bg-card shadow-soft">
-            <div className="flex items-center justify-between border-b border-border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
               <div className="text-sm font-semibold">Cluster sets</div>
-              <Button variant="ghost" onClick={() => load()}>
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Link href="/app/territories/zones">
+                  <Button variant="ghost" type="button">
+                    Draw zone
+                  </Button>
+                </Link>
+                <Button variant="ghost" onClick={() => load()}>
+                  Refresh
+                </Button>
+              </div>
             </div>
             <div className="divide-y divide-border">
               {clusterSets.length ? (
                 clusterSets.map((cs) => (
                   <div key={cs.id} className="flex items-center justify-between gap-3 p-4">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{cs.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">{cs.name}</span>
+                        <span
+                          className={
+                            cs.status === 'complete'
+                              ? 'rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-700 dark:text-green-400'
+                              : cs.status === 'running' || cs.status === 'queued'
+                                ? 'rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400'
+                                : 'rounded-full bg-muted px-2 py-0.5 text-xs text-mutedForeground'
+                          }
+                        >
+                          {cs.status}
+                        </span>
+                      </div>
                       <div className="mt-1 text-xs text-mutedForeground">
-                        {cs.status} • radius {cs.radius_m}m • min {cs.min_houses}
+                        radius {cs.radius_m}m • min {cs.min_houses} houses
                       </div>
                     </div>
-                    <Link href={`/app/territories/${cs.id}`} className="text-sm text-primary hover:underline">
-                      Open
+                    <Link href={`/app/territories/${cs.id}`} className="shrink-0 text-sm text-primary hover:underline">
+                      Open & assign
                     </Link>
                   </div>
                 ))

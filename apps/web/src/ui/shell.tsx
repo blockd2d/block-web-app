@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Map,
+  MapPin,
   MessageCircle,
   ScrollText,
   Settings,
@@ -59,6 +60,8 @@ function titleFromActive(active?: string) {
       return 'Dashboard';
     case 'sales':
       return 'Sales';
+    case 'leads':
+      return 'Leads';
     case 'territories':
     case 'assignments':
       return 'Territories';
@@ -84,6 +87,7 @@ function titleFromActive(active?: string) {
 function activeFromPathname(pathname: string) {
   if (pathname.startsWith('/app/dashboard')) return 'dashboard';
   if (pathname.startsWith('/app/sales')) return 'sales';
+  if (pathname.startsWith('/app/leads')) return 'leads';
   if (pathname.startsWith('/app/followups')) return 'followups';
   if (pathname.startsWith('/app/territories')) return 'territories';
   if (pathname.startsWith('/app/assignments')) return 'assignments';
@@ -125,6 +129,7 @@ export function AppShell(props: AppShellProps) {
               <div className="mt-4 space-y-1">
                 <NavItem href="/app/dashboard" label="Dashboard" icon={LayoutDashboard} />
                 {canManage || isRep ? <NavItem href="/app/sales" label="Sales" icon={BadgeDollarSign} /> : null}
+                {canManage || isRep ? <NavItem href="/app/leads" label="Leads" icon={MapPin} /> : null}
                 {canManage || isRep ? <NavItem href="/app/followups" label="Follow-ups" icon={CheckSquare} /> : null}
 
                 {canManage ? <NavItem href="/app/territories" label="Territories" icon={Map} /> : null}
