@@ -8,7 +8,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   BarChart3,
   BadgeDollarSign,
+  Calendar,
   CheckSquare,
+  ClipboardList,
+  Hammer,
   LayoutDashboard,
   LogOut,
   Map,
@@ -17,7 +20,8 @@ import {
   ScrollText,
   Settings,
   Upload,
-  Users2
+  Users2,
+  Wrench
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Button } from './button';
@@ -79,6 +83,14 @@ function titleFromActive(active?: string) {
       return 'Audit';
     case 'settings':
       return 'Settings';
+    case 'knocks':
+      return 'Knocks';
+    case 'schedule':
+      return 'Schedule';
+    case 'quotes':
+      return 'Quotes';
+    case 'crews':
+      return 'Crews';
     default:
       return 'Block';
   }
@@ -97,6 +109,10 @@ function activeFromPathname(pathname: string) {
   if (pathname.startsWith('/app/exports')) return 'exports';
   if (pathname.startsWith('/app/audit')) return 'audit';
   if (pathname.startsWith('/app/settings')) return 'settings';
+  if (pathname.startsWith('/app/knocks')) return 'knocks';
+  if (pathname.startsWith('/app/schedule')) return 'schedule';
+  if (pathname.startsWith('/app/quotes')) return 'quotes';
+  if (pathname.startsWith('/app/crews')) return 'crews';
   return undefined;
 }
 
@@ -131,6 +147,10 @@ export function AppShell(props: AppShellProps) {
                 {canManage || isRep ? <NavItem href="/app/sales" label="Sales" icon={BadgeDollarSign} /> : null}
                 {canManage || isRep ? <NavItem href="/app/leads" label="Leads" icon={MapPin} /> : null}
                 {canManage || isRep ? <NavItem href="/app/followups" label="Follow-ups" icon={CheckSquare} /> : null}
+                {canManage || isRep ? <NavItem href="/app/knocks" label="Knocks" icon={Hammer} /> : null}
+                {canManage || isRep ? <NavItem href="/app/schedule" label="Schedule" icon={Calendar} /> : null}
+                {canManage || isRep ? <NavItem href="/app/quotes" label="Quotes" icon={ClipboardList} /> : null}
+                {canManage ? <NavItem href="/app/crews" label="Crews" icon={Wrench} /> : null}
 
                 {canManage ? <NavItem href="/app/territories" label="Territories" icon={Map} /> : null}
                 {canManage ? <NavItem href="/app/assignments" label="Assignments" icon={Map} /> : null}
