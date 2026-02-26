@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Activity,
   BarChart3,
   BadgeDollarSign,
   Calendar,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { Button } from './button';
+import { OfflineIndicator } from './offline-indicator';
 import { ThemeToggle } from './theme-toggle';
 
 const NavItem = ({
@@ -56,6 +58,8 @@ type AppShellProps = {
   children: React.ReactNode;
   me: any;
   title?: string;
+  /** Override nav highlight when not using /app/* path (e.g. /audit, /labor) */
+  active?: string;
 };
 
 function titleFromActive(active?: string) {
@@ -91,6 +95,14 @@ function titleFromActive(active?: string) {
       return 'Quotes';
     case 'crews':
       return 'Crews';
+    case 'invoices':
+      return 'Invoices';
+    case 'operations':
+      return 'Operations';
+    case 'counties':
+      return 'Counties';
+    case 'labor':
+      return 'Labor';
     default:
       return 'Block';
   }
@@ -113,13 +125,15 @@ function activeFromPathname(pathname: string) {
   if (pathname.startsWith('/app/schedule')) return 'schedule';
   if (pathname.startsWith('/app/quotes')) return 'quotes';
   if (pathname.startsWith('/app/crews')) return 'crews';
+  if (pathname.startsWith('/app/invoices')) return 'invoices';
+  if (pathname.startsWith('/app/operations')) return 'operations';
   return undefined;
 }
 
 export function AppShell(props: AppShellProps) {
   const { children } = props;
   const pathname = usePathname();
-  const active = activeFromPathname(pathname);
+  const active = props.active ?? activeFromPathname(pathname);
   const title = props.title || titleFromActive(active);
   const role = props.me?.role as string | undefined;
   const isAdmin = role === 'admin';
@@ -152,6 +166,8 @@ export function AppShell(props: AppShellProps) {
                 {canManage || isRep ? <NavItem href="/app/quotes" label="Quotes" icon={ClipboardList} /> : null}
                 {canManage ? <NavItem href="/app/crews" label="Crews" icon={Wrench} /> : null}
 
+                {canManage ? <NavItem href="/app/invoices" label="Invoices" icon={BadgeDollarSign} /> : null}
+                {canManage ? <NavItem href="/app/operations" label="Operations" icon={Activity} /> : null}
                 {canManage ? <NavItem href="/app/territories" label="Territories" icon={Map} /> : null}
                 {canManage ? <NavItem href="/app/assignments" label="Assignments" icon={Map} /> : null}
                 {canManage ? <NavItem href="/app/messages" label="Messages" icon={MessageCircle} /> : null}
@@ -184,8 +200,9 @@ export function AppShell(props: AppShellProps) {
 
         {/* Main */}
         <main className="min-w-0 flex-1">
+          <OfflineIndicator />
           {/* Top bar */}
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 mt-2 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <h1 className="truncate text-xl font-semibold tracking-tight">{title}</h1>
               <div className="text-xs text-mutedForeground">{pathname}</div>

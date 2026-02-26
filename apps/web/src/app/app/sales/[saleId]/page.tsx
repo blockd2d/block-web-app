@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '../../../../lib/api';
 import { Button } from '../../../../ui/button';
+import { PhotoGallery } from '../../../../ui/media/photo-gallery';
 import { fmtCurrency } from '../../../../lib/format';
 
 function fmt(ts?: string) {
@@ -48,11 +49,6 @@ export default function SaleDetailPage() {
   const attachments: any[] = data?.attachments || [];
   const contract = data?.contract;
   const auditRows: any[] = data?.audit || [];
-
-  const photoAttachments = useMemo(
-    () => attachments.filter((a) => a?.url && (a.type === 'photo' || a.type === 'signature')),
-    [attachments]
-  );
 
   return (
     <div className="p-6">
@@ -141,34 +137,7 @@ export default function SaleDetailPage() {
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Attachments</h2>
-                    <p className="text-sm text-mutedForeground">Signed URLs (10 minutes)</p>
-                  </div>
-                </div>
-
-                {photoAttachments.length ? (
-                  <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {photoAttachments.map((a) => (
-                      <a
-                        key={a.id}
-                        href={a.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative overflow-hidden rounded-xl border border-border bg-background"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={a.url} alt={a.type} className="h-40 w-full object-cover transition-transform group-hover:scale-[1.02]" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 text-xs text-white">
-                          {a.type}
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-4 text-sm text-mutedForeground">No attachments yet.</div>
-                )}
+                <PhotoGallery attachments={attachments} title="Attachments" />
 
                 {attachments.filter((a) => a?.url && !(a.type === 'photo' || a.type === 'signature')).length ? (
                   <div className="mt-4">
@@ -254,6 +223,5 @@ export default function SaleDetailPage() {
           </div>
         ) : null}
       </div>
-    </div>
   );
 }

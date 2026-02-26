@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LoginSchema } from '@blockd2d/shared';
 import { api } from '../../lib/api';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
@@ -82,5 +82,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen grid place-items-center p-6"><div className="text-sm text-mutedForeground">Loading…</div></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -57,6 +57,5 @@ export default function FollowupsPage() {
           ) : null}
         </div>
       </div>
-    </div>
   );
 }

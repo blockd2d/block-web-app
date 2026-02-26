@@ -3,6 +3,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 import type { Metadata } from "next";
 import { Providers } from "../ui/providers";
+import { SwRegister } from "../ui/sw-register";
 
 
 export const metadata: Metadata = {
@@ -50,7 +51,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <Providers>{children}</Providers>
+        <Providers>
+          <SwRegister />
+          {children}
+        </Providers>
       </body>
     </html>
   );

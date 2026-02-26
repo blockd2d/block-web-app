@@ -121,6 +121,5 @@ export default function ExportsPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
