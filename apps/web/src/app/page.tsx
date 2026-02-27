@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 
@@ -48,7 +49,6 @@ export default function MarketingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Top bar */}
       <header className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <Section>
           <div className="flex h-16 items-center justify-between">
@@ -67,15 +67,14 @@ export default function MarketingPage() {
                   Sign in
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="sm">Request access</Button>
+              <Link href="/join">
+                <Button size="sm">Join</Button>
               </Link>
             </div>
           </div>
         </Section>
       </header>
 
-      {/* Hero */}
       <Section>
         <div className="relative py-16">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -100,7 +99,7 @@ export default function MarketingPage() {
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link href="/login">
+              <Link href="/join">
                   <Button size="lg">Get started</Button>
                 </Link>
                 <Link href="#how-it-works">
@@ -154,7 +153,6 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* Benefits */}
       <Section>
         <div className="py-12">
           <h2 className="text-2xl font-bold">Built for territory clustering and field sales ops</h2>
@@ -165,30 +163,12 @@ export default function MarketingPage() {
 
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              {
-                title: 'Territories in minutes',
-                body: 'Import a CSV and generate clusters that reps can actually work.'
-              },
-              {
-                title: 'Multi-tenant org isolation',
-                body: 'Separate orgs, counties, users, and data — built-in from day one.'
-              },
-              {
-                title: 'Rep + labor mobile',
-                body: 'Reps sell and follow up. Labor runs jobs, photos, signatures, and payment links.'
-              },
-              {
-                title: 'Ops-grade messaging hub',
-                body: 'Resolve threads, mark DNK, reassign, and optionally intervene as the company.'
-              },
-              {
-                title: 'Exports + contracts',
-                body: 'Generate exports for assignments, follow-ups, and job operations.'
-              },
-              {
-                title: 'Analytics that don’t lie',
-                body: 'Dashboards, timeseries, and leaderboards populated by seed + real activity.'
-              }
+              { title: 'Territories in minutes', body: 'Import a CSV and generate clusters that reps can actually work.' },
+              { title: 'Multi-tenant org isolation', body: 'Separate orgs, counties, users, and data — built-in from day one.' },
+              { title: 'Rep + labor mobile', body: 'Reps sell and follow up. Labor runs jobs, photos, signatures, and payment links.' },
+              { title: 'Ops-grade messaging hub', body: 'Resolve threads, mark DNK, reassign, and optionally intervene as the company.' },
+              { title: 'Exports + contracts', body: 'Generate exports for assignments, follow-ups, and job operations.' },
+              { title: 'Analytics that don\'t lie', body: 'Dashboards, timeseries, and leaderboards populated by seed + real activity.' }
             ].map((b) => (
               <div key={b.title} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
                 <div className="text-sm font-semibold">{b.title}</div>
@@ -199,27 +179,14 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* How it works */}
       <Section>
         <div id="how-it-works" className="py-12">
           <h2 className="text-2xl font-bold">How it works</h2>
           <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
             {[
-              {
-                step: '1',
-                title: 'Import + cluster',
-                body: 'Upload property data (lat/lng + attributes). Generate clusters with guardrails.'
-              },
-              {
-                step: '2',
-                title: 'Assign + execute',
-                body: 'Assign clusters to reps and track doors, leads, quotes, and sold.'
-              },
-              {
-                step: '3',
-                title: 'Close the loop',
-                body: 'Messaging workflows + job handoff to labor with signatures, photos, and payment collection.'
-              }
+              { step: '1', title: 'Import + cluster', body: 'Upload property data (lat/lng + attributes). Generate clusters with guardrails.' },
+              { step: '2', title: 'Assign + execute', body: 'Assign clusters to reps and track doors, leads, quotes, and sold.' },
+              { step: '3', title: 'Close the loop', body: 'Messaging workflows + job handoff to labor with signatures, photos, and payment collection.' }
             ].map((s) => (
               <div key={s.step} className="rounded-2xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex items-center gap-3">
@@ -235,7 +202,6 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* Proof / testimonials placeholder */}
       <Section>
         <div className="py-12">
           <div className="rounded-3xl border border-border bg-card p-8 shadow-soft">
@@ -244,7 +210,7 @@ export default function MarketingPage() {
               Add testimonials, case studies, or screenshots here. This section is intentionally a placeholder for launch assets.
             </p>
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-              {['“We doubled doors per hour.”', '“Territories stopped overlapping.”', '“Ops finally has control.”'].map((q) => (
+              {['"We doubled doors per hour."', '"Territories stopped overlapping."', '"Ops finally has control."'].map((q) => (
                 <div key={q} className="rounded-2xl border border-dashed border-border bg-background/40 p-4 text-sm text-mutedForeground">
                   {q}
                 </div>
@@ -254,7 +220,6 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* Pricing teaser */}
       <Section>
         <div className="py-12">
           <h2 className="text-2xl font-bold">Pricing</h2>
@@ -285,28 +250,15 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* FAQ */}
       <Section>
         <div className="py-12">
           <h2 className="text-2xl font-bold">FAQ</h2>
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             {[
-              {
-                q: 'Does Block work for pressure washing?',
-                a: 'Yes — it’s designed around pressure washing + exterior services (territories, follow-ups, jobs, labor handoff).'
-              },
-              {
-                q: 'Do reps need a laptop?',
-                a: 'No. Rep and labor roles are mobile-only. Managers/admins use the web app.'
-              },
-              {
-                q: 'How does messaging work?',
-                a: 'SMS is handled via Twilio through the backend API. The web app shows ops-grade threads and controls.'
-              },
-              {
-                q: 'Can we export territories and assignments?',
-                a: 'Yes. Exports are generated by the backend and stored in Supabase Storage.'
-              }
+              { q: 'Does Block work for pressure washing?', a: 'Yes — it\'s designed around pressure washing + exterior services (territories, follow-ups, jobs, labor handoff).' },
+              { q: 'Do reps need a laptop?', a: 'No. Rep and labor roles are mobile-only. Managers/admins use the web app.' },
+              { q: 'How does messaging work?', a: 'SMS is handled via Twilio through the backend API. The web app shows ops-grade threads and controls.' },
+              { q: 'Can we export territories and assignments?', a: 'Yes. Exports are generated by the backend and stored in Supabase Storage.' }
             ].map((f) => (
               <div key={f.q} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
                 <div className="text-sm font-semibold">{f.q}</div>
@@ -317,7 +269,6 @@ export default function MarketingPage() {
         </div>
       </Section>
 
-      {/* Closing CTA */}
       <Section>
         <div className="py-12">
           <div className="rounded-3xl border border-border bg-card p-8 shadow-soft">
@@ -326,8 +277,8 @@ export default function MarketingPage() {
               Start with the demo seed to see dashboards, analytics, messaging threads, and exports populate instantly.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/login">
-                <Button size="lg">Request access</Button>
+              <Link href="/join">
+                <Button size="lg">Join</Button>
               </Link>
               <Link href="/login">
                 <Button variant="secondary" size="lg">

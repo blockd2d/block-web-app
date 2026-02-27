@@ -2,7 +2,6 @@
   "name": "@block/web",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "packageManager": "pnpm@9.15.9",
   "engines": {
     "node": "20.x"
@@ -15,6 +14,7 @@
   },
   "dependencies": {
     "@blockd2d/shared": "^0.1.2",
+    "@supabase/supabase-js": "^2.45.4",
     "@turf/bbox": "^7.3.4",
     "@turf/boolean-point-in-polygon": "^7.3.4",
     "@turf/helpers": "^7.3.4",

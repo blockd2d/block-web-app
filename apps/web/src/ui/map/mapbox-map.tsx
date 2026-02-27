@@ -125,8 +125,20 @@ export function MapboxMap({
     mapRef.current = map;
 
     return () => {
-      map.remove();
       mapRef.current = null;
+      const m = map;
+      const isAbort = (e: any) => e?.name === 'AbortError' || e?.code === 20;
+      const onUnhandled = (ev: PromiseRejectionEvent) => {
+        if (isAbort(ev?.reason)) {
+          ev.preventDefault();
+          window.removeEventListener('unhandledrejection', onUnhandled);
+        }
+      };
+      window.addEventListener('unhandledrejection', onUnhandled);
+      setTimeout(() => window.removeEventListener('unhandledrejection', onUnhandled), 500);
+      try {
+        m.remove();
+      } catch (_e) {}
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

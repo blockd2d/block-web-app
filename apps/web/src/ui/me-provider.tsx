@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { api, ApiError } from '../lib/api';
+import { getDevMe } from '../lib/dev-auth';
 
 export type Me = {
   id: string;
@@ -33,6 +34,13 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = React.useCallback(async () => {
     setError(null);
+    const devMe = getDevMe();
+    if (devMe) {
+      setMe(devMe);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const r = await api.get('/v1/auth/me');
@@ -52,7 +60,7 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     refresh().catch(() => {});
   }, [refresh]);
 

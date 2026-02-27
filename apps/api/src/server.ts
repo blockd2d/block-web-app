@@ -73,7 +73,7 @@ export function buildServer() {
     const method = req.method.toUpperCase();
     const isWrite = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
     if (!isWrite) return;
-    // allow some endpoints to skip CSRF (webhooks)
+    // allow some endpoints to skip CSRF (webhooks, auth before session exists)
     const url = req.url || '';
     // Webhooks (no CSRF)
     if (
@@ -81,6 +81,13 @@ export function buildServer() {
       url.startsWith('/v1/payments/stripe/webhook') ||
       url.startsWith('/v1/twilio/inbound') ||
       url.startsWith('/v1/stripe/webhook')
+    )
+      return;
+    // Auth: login/refresh have no session yet; invite accept is one-time link
+    if (
+      url.startsWith('/v1/auth/login') ||
+      url.startsWith('/v1/auth/refresh') ||
+      url.startsWith('/v1/invites/accept')
     )
       return;
     try {

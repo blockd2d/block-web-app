@@ -194,6 +194,32 @@ model invites {
   organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+/// Public onboarding requests (created via /join). Provisioning occurs on status changes.
+model join_requests {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status                String   @default("pending")
+  created_at            DateTime @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+
+  company_name          String
+  owner_full_name       String
+  owner_email           String
+  owner_phone           String
+  team_size             String
+  industry              String
+  website               String
+  role                  String
+  referral_source       String
+
+  logo_object_path      String?
+  public_token          String   @unique
+  decision_reason       String?
+  approved_company_id   String?  @db.Uuid
+  approved_admin_user_id String? @db.Uuid
+
+  @@index([public_token], map: "join_requests_status_token_idx")
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model job_photos {

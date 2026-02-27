@@ -9,9 +9,9 @@ const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.string().default('4000'),
 
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(10),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(10),
+  SUPABASE_URL: z.union([z.string().url(), z.literal('')]).optional().default(''),
+  SUPABASE_ANON_KEY: z.string().optional().default(''),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(''),
 
   COOKIE_DOMAIN: z.string().default('localhost'),
   COOKIE_SECURE: Bool.default(false),
@@ -26,6 +26,10 @@ const EnvSchema = z.object({
 
   POSTHOG_API_KEY: z.string().optional().default(''),
   POSTHOG_HOST: z.string().optional().default('https://app.posthog.com'),
+
+  POSTMARK_SERVER_TOKEN: z.string().optional().default(''),
+  POSTMARK_FROM_EMAIL: z.string().optional().default('admin@blockd2d.com'),
+  APP_BASE_URL: z.string().optional().default('http://localhost:3000'),
 
   TWILIO_ACCOUNT_SID: z.string().optional().default(''),
   TWILIO_AUTH_TOKEN: z.string().optional().default(''),

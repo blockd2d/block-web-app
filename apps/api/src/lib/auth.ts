@@ -13,6 +13,19 @@ export type AuthContext = {
   profile_id: string;
 };
 
+/** Hardcoded dev account for local testing (no Supabase required). */
+export const DEV_ACCOUNT = {
+  email: 'stephenonochie@gmail.com',
+  password: 'BlockDev2025!',
+  userId: '00000000-0000-4000-8000-000000000001',
+  orgId: '00000000-0000-4000-8000-000000000002',
+  sessionPrefix: 'dev_session_'
+} as const;
+
+export function isDevSession(token: string | null): boolean {
+  return typeof token === 'string' && token.startsWith(DEV_ACCOUNT.sessionPrefix);
+}
+
 export function getAccessTokenFromRequest(req: FastifyRequest): string | null {
   const auth = req.headers['authorization'];
   if (typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice('Bearer '.length);
@@ -29,6 +42,16 @@ export function isBearerRequest(req: FastifyRequest): boolean {
 export async function buildAuthContext(req: FastifyRequest): Promise<AuthContext | null> {
   const accessToken = getAccessTokenFromRequest(req);
   if (!accessToken) return null;
+
+  if (isDevSession(accessToken)) {
+    return {
+      user_id: DEV_ACCOUNT.userId,
+      profile_id: DEV_ACCOUNT.userId,
+      org_id: DEV_ACCOUNT.orgId,
+      role: 'admin',
+      email: DEV_ACCOUNT.email
+    };
+  }
 
   const supabaseAnon = createAnonClient();
   const { data, error } = await supabaseAnon.auth.getUser(accessToken);

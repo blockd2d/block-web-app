@@ -4,6 +4,7 @@ import { stringify } from 'csv-stringify/sync';
 import PDFDocument from 'pdfkit';
 import { env } from "../lib/env.js"
 import twilio from 'twilio';
+import { sendPostmarkEmail } from '../lib/postmark.js';
 
 const twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
 
@@ -32,9 +33,106 @@ export async function processJob(client: SupabaseClient, job: any) {
       return await processContractGenerate(client, job);
     case 'twilio_send_sms':
       return await processTwilioSendSms(client, job);
+    case 'join_provision':
+      return await processJoinProvision(client, job);
     default:
       return { ok: true, skipped: true, reason: 'unknown type' };
   }
+}
+
+async function processJoinProvision(client: SupabaseClient, job: any) {
+  const joinRequestId = job.payload?.join_request_id as string | undefined;
+  if (!joinRequestId) throw new Error('missing join_request_id');
+
+  const { data: req, error } = await client
+    .from('join_requests')
+    .select(
+      'id,status,company_name,owner_full_name,owner_email,decision_reason,approved_company_id,approved_admin_user_id,public_token'
+    )
+    .eq('id', joinRequestId)
+    .single();
+  if (error || !req) throw new Error(error?.message || 'join request not found');
+
+  const status = String((req as any).status || '');
+  const ownerEmail = String((req as any).owner_email || '').trim();
+  const ownerName = String((req as any).owner_full_name || '').trim();
+  const companyName = String((req as any).company_name || '').trim();
+
+  const from = env.POSTMARK_FROM_EMAIL || 'admin@blockd2d.com';
+  const appBaseUrl = String(env.APP_BASE_URL || env.WEB_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+  if (status === 'rejected') {
+    const reason = String((req as any).decision_reason || '').trim();
+    if (!reason) throw new Error('decision_reason is required for rejected join requests');
+
+    await sendPostmarkEmail({
+      From: from,
+      To: ownerEmail,
+      Subject: 'Your Block access request',
+      TextBody:
+        `Thanks for your interest in Block.\n\n` +
+        `We’re not able to approve your request at this time.\n\n` +
+        `Reason: ${reason}\n`
+    });
+    return { ok: true, status: 'rejected', emailed: true };
+  }
+
+  if (status !== 'approved') return { ok: true, skipped: true, reason: `status=${status}` };
+
+  // Idempotency: if already fully provisioned, do nothing
+  if ((req as any).approved_company_id && (req as any).approved_admin_user_id) {
+    return { ok: true, skipped: true, reason: 'already provisioned' };
+  }
+
+  // Create organization if missing
+  let orgId = (req as any).approved_company_id as string | null;
+  if (!orgId) {
+    const org = await client.from('organizations').insert({ name: companyName }).select('id').single();
+    if (org.error || !org.data) throw new Error(org.error?.message || 'unable to create organization');
+    orgId = org.data.id as string;
+    await client.from('join_requests').update({ approved_company_id: orgId }).eq('id', joinRequestId);
+  }
+
+  // Invite admin user (Supabase Auth invite email)
+  let userId = (req as any).approved_admin_user_id as string | null;
+  if (!userId) {
+    const inviteRes: any = await (client as any).auth?.admin?.inviteUserByEmail?.(ownerEmail, {
+      data: { name: ownerName },
+      redirectTo: `${appBaseUrl}/invite/accept`
+    });
+
+    if (inviteRes?.error) throw new Error(inviteRes.error.message || 'unable to invite user');
+    userId = inviteRes?.data?.user?.id || inviteRes?.data?.id || null;
+    if (!userId) throw new Error('invite did not return user id');
+
+    await client.from('join_requests').update({ approved_admin_user_id: userId }).eq('id', joinRequestId);
+
+    // Create profile membership
+    const prof = await client.from('profiles').insert({
+      id: userId,
+      org_id: orgId,
+      role: 'admin',
+      name: ownerName || 'Admin',
+      email: ownerEmail
+    });
+    // If profile already exists, ignore
+    if (prof.error && !/duplicate key/i.test(prof.error.message || '')) {
+      throw new Error(prof.error.message);
+    }
+  }
+
+  // Notify requester (separate from Supabase invite email)
+  await sendPostmarkEmail({
+    From: from,
+    To: ownerEmail,
+    Subject: 'You’re approved for Block',
+    TextBody:
+      `Good news — your request to join Block has been approved.\n\n` +
+      `You should receive an invite email to set your password shortly.\n\n` +
+      `Sign in: ${appBaseUrl}/login\n`
+  });
+
+  return { ok: true, status: 'approved', org_id: orgId, user_id: userId };
 }
 
 async function processClusterGenerate(client: SupabaseClient, job: any) {

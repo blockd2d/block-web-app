@@ -1,13 +1,16 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginSchema } from '@blockd2d/shared';
 import { api } from '../../lib/api';
+import { isDevLogin, setDevSession } from '../../lib/dev-auth';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
@@ -15,12 +18,25 @@ function LoginForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDevLogin, setShowDevLogin] = useState(false);
+
+  useEffect(() => {
+    setShowDevLogin(true);
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
+      // Dev account: sign in without any API request
+      if (isDevLogin(email, password)) {
+        setDevSession();
+        const next = searchParams.get('next');
+        const dest = next && next.startsWith('/app') ? next : '/app/dashboard';
+        window.location.href = dest;
+        return;
+      }
       const payload = LoginSchema.parse({ email, password, turnstileToken });
       await api.post('/v1/auth/login', payload);
       const next = searchParams.get('next');
@@ -76,6 +92,34 @@ function LoginForm() {
             {loading ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+
+        <div className="mt-3">
+          <Link href="/join" className="text-sm text-mutedForeground hover:text-foreground">
+            Join
+          </Link>
+        </div>
+
+        {showDevLogin ? (
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                try {
+                  setDevSession();
+                  const next = searchParams.get('next');
+                  const dest = (next && next.startsWith('/app') ? next : '/app/dashboard');
+                  router.replace(dest);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Dev sign-in failed');
+                }
+              }}
+            >
+              Dev sign-in (no API)
+            </Button>
+          </div>
+        ) : null}
 
         <div className="mt-4 text-xs text-mutedForeground">
           Need access? Ask an admin for an invite link.

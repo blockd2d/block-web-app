@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { LoginSchema } from '@blockd2d/shared';
 import { createAnonClient, createServiceClient } from '../lib/supabase.js';
-import { clearAuthCookies, refreshSession, setAuthCookies } from '../lib/auth.js';
+import { clearAuthCookies, DEV_ACCOUNT, refreshSession, setAuthCookies } from '../lib/auth.js';
 import { verifyTurnstile } from '../lib/turnstile.js';
 import { env } from '../lib/env.js';
 import { capture } from '../lib/posthog.js';
@@ -15,6 +15,24 @@ export async function authRoutes(app: FastifyInstance) {
 
     const ts = await verifyTurnstile({ token: body.turnstileToken, ip: req.ip, bypass });
     if (!ts.ok) return reply.code(400).send({ error: ts.error, details: ts.details });
+
+    // Hardcoded dev account (no Supabase) so you can log in and see the app
+    if (
+      body.email === DEV_ACCOUNT.email &&
+      body.password === DEV_ACCOUNT.password &&
+      !isMobile
+    ) {
+      const devToken = `${DEV_ACCOUNT.sessionPrefix}${DEV_ACCOUNT.userId}`;
+      setAuthCookies(reply, { access_token: devToken, refresh_token: devToken });
+      const devUser = {
+        id: DEV_ACCOUNT.userId,
+        org_id: DEV_ACCOUNT.orgId,
+        role: 'admin',
+        name: 'Dev User',
+        email: DEV_ACCOUNT.email
+      };
+      return reply.send({ user: devUser, session: undefined });
+    }
 
     const anon = createAnonClient();
     const { data, error } = await anon.auth.signInWithPassword({ email: body.email, password: body.password });
@@ -81,6 +99,18 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.get('/me', async (req, reply) => {
     if (!req.ctx) return reply.code(401).send({ error: 'Unauthorized' });
+    if (req.ctx.user_id === DEV_ACCOUNT.userId) {
+      return reply.send({
+        user: {
+          id: DEV_ACCOUNT.userId,
+          org_id: DEV_ACCOUNT.orgId,
+          role: 'admin',
+          name: 'Dev User',
+          email: DEV_ACCOUNT.email,
+          created_at: new Date().toISOString()
+        }
+      });
+    }
     const service = createServiceClient();
     const { data: profile } = await service
       .from('profiles')

@@ -16,9 +16,9 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (loading) return;
     if (me) return;
-    // Auth failure (or unknown error) => send to login.
+    // Auth failure (or unknown error) => send to join.
     const next = pathname && pathname.startsWith('/app') ? pathname : '/app/dashboard';
-    router.replace(`/login?next=${encodeURIComponent(next)}`);
+    router.replace(`/join?next=${encodeURIComponent(next)}`);
   }, [loading, me, router, pathname]);
 
   if (loading) return <FullPageSpinner label="Loading your workspace…" />;
@@ -35,7 +35,7 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
             <Button onClick={() => refresh()} variant="secondary">
               Retry
             </Button>
-            <Button onClick={() => router.replace('/login')}>Go to login</Button>
+            <Button onClick={() => router.replace('/join')}>Go to join</Button>
           </div>
         </div>
       </div>

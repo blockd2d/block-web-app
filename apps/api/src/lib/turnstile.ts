@@ -3,7 +3,8 @@ import { env } from './env.js';
 export async function verifyTurnstile(opts: { token?: string | null; ip?: string | null; bypass?: boolean }) {
   if (opts.bypass) return { ok: true, skipped: true, bypass: true };
   if (!env.TURNSTILE_SECRET_KEY) return { ok: true, skipped: true };
-  if (!opts.token) return { ok: false, error: 'Missing turnstile token' };
+  // Web app has no Turnstile widget yet; allow login without token (skip verification)
+  if (!opts.token) return { ok: true, skipped: true };
 
   const form = new URLSearchParams();
   form.set('secret', env.TURNSTILE_SECRET_KEY);

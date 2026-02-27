@@ -25,6 +25,7 @@ import {
   Wrench
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { clearDevSession } from '../lib/dev-auth';
 import { Button } from './button';
 import { OfflineIndicator } from './offline-indicator';
 import { ThemeToggle } from './theme-toggle';
@@ -183,11 +184,13 @@ export function AppShell(props: AppShellProps) {
                   variant="ghost"
                   className="w-full justify-start text-mutedForeground hover:text-foreground"
                   onClick={async () => {
+                    clearDevSession();
                     try {
                       await api('/v1/auth/logout', { method: 'POST' });
-                    } finally {
-                      window.location.href = '/';
+                    } catch {
+                      // ignore if API not available (e.g. dev-only session)
                     }
+                    window.location.href = '/';
                   }}
                 >
                   <LogOut className="h-4 w-4" />
