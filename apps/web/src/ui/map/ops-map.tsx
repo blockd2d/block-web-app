@@ -243,7 +243,7 @@ export function OpsMap({
         }
       };
       window.addEventListener('unhandledrejection', onUnhandled);
-      const t = setTimeout(() => window.removeEventListener('unhandledrejection', onUnhandled), 500);
+      const t = setTimeout(() => window.removeEventListener('unhandledrejection', onUnhandled), 2000);
       try {
         m.remove();
       } catch (_e) {

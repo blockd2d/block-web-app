@@ -100,6 +100,14 @@ export async function salesRoutes(app: FastifyInstance) {
       until = untilDt;
     }
 
+    const statusesRaw = (q.statuses || q.status || '') as string;
+    const statuses = String(statusesRaw)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const search = q.q ? sanitizeLike(String(q.q)).slice(0, 120) : '';
+    const repFilter = ctx.role !== 'rep' && q.rep_id ? String(q.rep_id) : null;
+
     let query = service
       .from('sales_view')
       .select('*', { count: 'exact' })
@@ -109,38 +117,54 @@ export async function salesRoutes(app: FastifyInstance) {
 
     if (since) query = query.gte('created_at', since.toISOString());
     if (until) query = query.lte('created_at', until.toISOString());
-
-    if (ctx.role === 'rep') {
-      query = query.eq('rep_id', repId);
-    } else {
-      const repFilter = q.rep_id ? String(q.rep_id) : null;
-      if (repFilter) query = query.eq('rep_id', repFilter);
-    }
-
-    // Status filters
-    const statusesRaw = (q.statuses || q.status || '') as string;
-    const statuses = String(statusesRaw)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    if (ctx.role === 'rep') query = query.eq('rep_id', repId!);
+    else if (repFilter) query = query.eq('rep_id', repFilter);
     if (statuses.length === 1) query = query.eq('pipeline_status', statuses[0]);
     if (statuses.length > 1) query = query.in('pipeline_status', statuses);
-
-    // Search across common fields
-    const search = q.q ? sanitizeLike(String(q.q)).slice(0, 120) : '';
     if (search) {
-      // Supabase `.or()` expects a comma-delimited filter string.
       query = query.or(
         `customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_email.ilike.%${search}%,address1.ilike.%${search}%`
       );
     }
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+    const useSalesFallback =
+      error && /sales_view|schema cache/i.test(String(error.message));
+
+    if (useSalesFallback) {
+      let fallback = service
+        .from('sales')
+        .select('*', { count: 'exact' })
+        .eq('org_id', ctx.org_id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      if (since) fallback = fallback.gte('created_at', since.toISOString());
+      if (until) fallback = fallback.lte('created_at', until.toISOString());
+      if (ctx.role === 'rep') fallback = fallback.eq('rep_id', repId!);
+      else if (repFilter) fallback = fallback.eq('rep_id', repFilter);
+      if (statuses.length === 1) fallback = fallback.eq('status', statuses[0]);
+      if (statuses.length > 1) fallback = fallback.in('status', statuses);
+      if (search) {
+        fallback = fallback.or(
+          `customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_email.ilike.%${search}%`
+        );
+      }
+      const result = await fallback;
+      if (result.error) {
+        data = [];
+        count = 0;
+        error = null;
+      } else {
+        data = (result.data || []).map((row: any) => ({ ...row, pipeline_status: row.status ?? row.pipeline_status }));
+        count = result.count ?? 0;
+        error = null;
+      }
+    }
+
     if (error) return reply.code(400).send({ error: error.message });
 
     return reply.send({
       items: data || [],
-      // back-compat key used by some older clients
       sales: data || [],
       page,
       limit,
@@ -158,12 +182,17 @@ export async function salesRoutes(app: FastifyInstance) {
     const service = createServiceClient();
 
     // Fetch the denormalized row first (fast, and gives rep_id to enforce RBAC).
-    const { data: sale, error } = await service
+    let { data: sale, error } = await service
       .from('sales_view')
       .select('*')
       .eq('org_id', ctx.org_id)
       .eq('id', id)
       .single();
+    if (error && /sales_view|schema cache/i.test(String(error.message))) {
+      const fallback = await service.from('sales').select('*').eq('org_id', ctx.org_id).eq('id', id).single();
+      sale = fallback.data ? { ...fallback.data, pipeline_status: (fallback.data as any).status ?? (fallback.data as any).pipeline_status } : null;
+      error = fallback.error;
+    }
     if (error || !sale) return reply.code(404).send({ error: 'Not found' });
 
     if (ctx.role === 'rep') {

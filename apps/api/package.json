@@ -16,7 +16,8 @@
     "worker:dev": "tsx watch src/worker.ts",
     "worker": "node dist/worker.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed:dev": "tsx src/scripts/seed-dev.ts"
+    "seed:dev": "tsx src/scripts/seed-dev.ts",
+    "seed:client": "tsx src/scripts/seed-dev-client.ts"
   },
   "dependencies": {
   "@blockd2d/shared": "^0.1.2",

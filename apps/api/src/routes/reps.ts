@@ -75,29 +75,35 @@ export async function repsRoutes(app: FastifyInstance) {
 
 
   // Manager: latest location per rep (for live tracking overlay)
-  app.get('/locations', async (req, reply) => {
-    // Alias for UI convenience
-    (req as any).url = '/locations/latest';
-    return reply.redirect(302, '/v1/reps/locations/latest');
-  });
+  async function getLocationsLatest(req: any, reply: any) {
+    try {
+      const ctx = requireManager(req);
+      const service = createServiceClient();
+      const { data, error } = await service
+        .from('rep_locations_latest')
+        .select('id, org_id, rep_id, lat, lng, speed, heading, clocked_in, recorded_at')
+        .eq('org_id', ctx.org_id);
 
-  app.get('/locations/latest', async (req, reply) => {
-    const ctx = requireManager(req);
-    const service = createServiceClient();
-    const { data, error } = await service
-      .from('rep_locations_latest')
-      .select('id, org_id, rep_id, lat, lng, speed, heading, clocked_in, recorded_at')
-      .eq('org_id', ctx.org_id);
+      if (error) {
+        return reply.send({ locations: [] });
+      }
 
-    if (error) return reply.code(400).send({ error: error.message });
+      const rows = data || [];
+      const repIds = [...new Set(rows.map((d: any) => d.rep_id).filter(Boolean))];
+      let nameById = new Map<string, string>();
+      if (repIds.length > 0) {
+        const { data: reps } = await service.from('reps').select('id,name').eq('org_id', ctx.org_id).in('id', repIds);
+        nameById = new Map((reps || []).map((r: any) => [r.id, r.name]));
+      }
+      const out = rows.map((d: any) => ({ ...d, rep_name: nameById.get(d.rep_id) || null }));
+      return reply.send({ locations: out });
+    } catch {
+      return reply.send({ locations: [] });
+    }
+  }
 
-    // Attach rep name
-    const repIds = (data || []).map((d: any) => d.rep_id);
-    const { data: reps } = await service.from('reps').select('id,name').eq('org_id', ctx.org_id).in('id', repIds);
-    const nameById = new Map((reps || []).map((r: any) => [r.id, r.name]));
-    const rows = (data || []).map((d: any) => ({ ...d, rep_name: nameById.get(d.rep_id) || null }));
-    return reply.send({ locations: rows });
-  });
+  app.get('/locations', getLocationsLatest);
+  app.get('/locations/latest', getLocationsLatest);
 
   app.get('/', async (req, reply) => {
     const ctx = requireManager(req);
