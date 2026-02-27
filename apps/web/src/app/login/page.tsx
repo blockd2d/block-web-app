@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoginSchema } from '@blockd2d/shared';
-import { api } from '../../lib/api';
+import { api, ApiError } from '../../lib/api';
 import { isDevLogin, setDevSession } from '../../lib/dev-auth';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -43,7 +43,15 @@ function LoginForm() {
       const dest = next && next.startsWith('/app') ? next : '/app/dashboard';
       window.location.href = dest;
     } catch (err: any) {
-      setError(err?.message || 'Login failed');
+      if (err instanceof ApiError && err.status === 404) {
+        setError(
+          'Login request failed (404). Check that the API is running and NEXT_PUBLIC_API_URL points to the Block API (e.g. http://localhost:4000).'
+        );
+      } else if (err instanceof ApiError && err.status === 401) {
+        setError('Invalid credentials.');
+      } else {
+        setError(err?.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

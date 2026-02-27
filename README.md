@@ -31,7 +31,8 @@ Copy `.env.example` → `.env` in the repo root (and optionally per-app).
 
 Required highlights:
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_API_URL` (web) and `EXPO_PUBLIC_API_URL` (mobile)
+- `NEXT_PUBLIC_API_URL` (web): Block API base URL, e.g. `http://localhost:4000` locally (required for sign-in; verify with `GET {API_URL}/health`)
+- `EXPO_PUBLIC_API_URL` (mobile)
 - `NEXT_PUBLIC_MAPBOX_TOKEN` for web maps
 - `POSTHOG_*` optional
 - `TWILIO_*`, `STRIPE_*` optional

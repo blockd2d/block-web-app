@@ -5,6 +5,8 @@ function getCsrf() {
 }
 
 function apiBase() {
+  // In the browser, use same-origin proxy so auth cookies are set for the web app (fixes cross-origin redirect to /join after login).
+  if (typeof window !== 'undefined') return '/api/proxy';
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 }
 
@@ -21,7 +23,7 @@ export class ApiError extends Error {
 }
 
 async function request(method: string, path: string, body?: any, init?: RequestInit) {
-  const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const base = apiBase();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init?.headers ? Object.fromEntries(new Headers(init.headers as any).entries()) : {})
@@ -50,6 +52,21 @@ async function request(method: string, path: string, body?: any, init?: RequestI
 
   if (!res.ok) {
     const msg = (data && (data.error || data.message)) || 'Request failed';
+    // #region agent log
+    if (typeof fetch !== 'undefined')
+      fetch('http://127.0.0.1:7527/ingest/540497ec-c047-4e2e-832e-74480964fbf6', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '2be4af' },
+        body: JSON.stringify({
+          sessionId: '2be4af',
+          hypothesisId: 'errors',
+          location: 'api.request',
+          message: `API ${method} ${path} ${res.status}`,
+          data: { method, path, status: res.status, error: msg },
+          timestamp: Date.now()
+        })
+      }).catch(() => {});
+    // #endregion
     throw new ApiError(msg, res.status, data);
   }
   return data;

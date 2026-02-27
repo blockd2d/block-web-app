@@ -228,7 +228,17 @@ See repo root `README.md`.
 
 ---
 
-## 7) Production smoke checklist
+## 7) Sign-in and first customers (e.g. Nova)
+
+**Web app (Vercel)** must have `NEXT_PUBLIC_API_URL` set to the **Block API base URL** (e.g. your Railway API URL). If this is wrong or missing, sign-in requests will get 404 and login will fail. Before testing login, verify the API is reachable: `GET {API_URL}/health` should return `{"ok":true,...}`.
+
+**Seeded users** (created by `pnpm --filter @block/api seed:dev`): the script prints admin/manager/rep/labor emails and the **seed password** (e.g. `Password123!`) to the console. Use that password for `manager+{suffix}@block.local` and `admin+{suffix}@block.local` (suffix is the 6-digit timestamp from the seed run). Share the printed credentials with the first customer (e.g. Nova Services) or document in an internal runbook.
+
+To let a customer set their own password, use the **invite-accept flow**: create an invite (admin) and send the link; they set password at `/invite/accept?token=...`.
+
+---
+
+## 8) Production smoke checklist
 
 - Can login via `/login` (admin/manager)
 - Can create invite and accept it
@@ -239,7 +249,7 @@ See repo root `README.md`.
 - Stripe checkout link works and webhook marks payment paid
 
 
-## Mapbox (Web)
+## 9) Mapbox (Web)
 The web app uses Mapbox for territories/cluster overlays.
 
 Set:

@@ -15,7 +15,7 @@ export function middleware(req: NextRequest) {
   if (hasSession || hasDev) return NextResponse.next();
 
   const url = req.nextUrl.clone();
-  url.pathname = '/join';
+  url.pathname = '/login';
   url.search = `?next=${encodeURIComponent(pathname + (search || ''))}`;
   return NextResponse.redirect(url);
 }

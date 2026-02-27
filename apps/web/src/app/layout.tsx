@@ -48,6 +48,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground">
+        {/* #region agent log */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var e='http://127.0.0.1:7527/ingest/540497ec-c047-4e2e-832e-74480964fbf6';function send(p){fetch(e,{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'2be4af'},body:JSON.stringify(Object.assign({sessionId:'2be4af',timestamp:Date.now()},p))}).catch(function(){});}window.onerror=function(msg,url,line,col,err){send({location:'window.onerror',message:String(msg),data:{url:url,line:line,col:col,stack:err&&err.stack},hypothesisId:'errors'});};window.onunhandledrejection=function(ev){send({location:'unhandledrejection',message:'Unhandled rejection',data:{reason:String(ev.reason&&(ev.reason.message||ev.reason)),stack:ev.reason&&ev.reason.stack},hypothesisId:'errors'});};})();`,
+          }}
+        />
+        {/* #endregion */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var isDev=typeof location!=='undefined'&&(location.hostname==='localhost'||location.hostname==='127.0.0.1');if(isDev&&'serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}})();`,
