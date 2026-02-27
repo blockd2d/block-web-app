@@ -4,3 +4,12 @@ node_modules
 .DS_Store
 
 /generated/prisma
+
+# Next.js / Turbo / build artifacts
+.next
+.turbo
+.pnpm-store
+dist
+coverage
+*.tsbuildinfo
+*.log
