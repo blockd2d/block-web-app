@@ -1,12 +1,19 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { AppShell } from '../../ui/shell';
 import { MeProvider } from '../../ui/me-provider';
+import { ThemeProvider } from '../../ui/theme-context';
 import { FullPageSpinner } from '../../ui/spinner';
 import { Button } from '../../ui/button';
 import { useMe } from '../../lib/use-me';
+
+const PosthogInit = dynamic(
+  () => import('../../ui/posthog-provider').then((m) => m.PosthogInit),
+  { ssr: false }
+);
 
 function ProtectedShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -47,9 +54,12 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <MeProvider>
-      <ProtectedShell>{children}</ProtectedShell>
-    </MeProvider>
+    <ThemeProvider>
+      <PosthogInit />
+      <MeProvider>
+        <ProtectedShell>{children}</ProtectedShell>
+      </MeProvider>
+    </ThemeProvider>
   );
 }
 

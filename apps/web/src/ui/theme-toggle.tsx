@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useTheme } from 'next-themes';
+import { useTheme } from './theme-context';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from './button';
 
@@ -22,7 +22,6 @@ export function ThemeToggle() {
   const currentLabel = isDark ? 'Dark Neon' : 'Light Professional';
   const nextLabel = isDark ? 'Light Professional' : 'Dark Neon';
 
-  // Avoid hydration mismatch with next-themes.
   if (!mounted) {
     return (
       <Button variant="ghost" size="sm" aria-label="Theme" disabled className="justify-start">

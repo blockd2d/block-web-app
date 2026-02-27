@@ -2,9 +2,6 @@ import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import type { Metadata } from "next";
-import { Providers } from "../ui/providers";
-import { SwRegister } from "../ui/sw-register";
-
 
 export const metadata: Metadata = {
   title: {
@@ -49,12 +46,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen">
-        <Providers>
-          <SwRegister />
-          {children}
-        </Providers>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var isDev=typeof location!=='undefined'&&(location.hostname==='localhost'||location.hostname==='127.0.0.1');if(isDev&&'serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}})();`,
+          }}
+        />
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){if(typeof window==='undefined'||!('serviceWorker' in navigator))return;if(window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1')return;navigator.serviceWorker.register('/sw.js',{scope:'/',updateViaCache:'none'}).catch(function(){});})();`,
+          }}
+        />
       </body>
     </html>
   );
