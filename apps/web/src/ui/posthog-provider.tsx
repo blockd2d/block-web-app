@@ -17,7 +17,7 @@ export function PosthogInit() {
         api_host: host,
         capture_pageview: false,
         capture_pageleave: true,
-        autocapture: true
+        autocapture: false
       });
     } catch {
       // noop

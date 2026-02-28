@@ -52,7 +52,27 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
   return <AppShell me={me}>{children}</AppShell>;
 }
 
+// In dev, suppress error overlay for known third-party (e.g. PostHog ingest) network failures.
+function useDevThirdPartyRejectionFilter() {
+  React.useEffect(() => {
+    if (process.env.NODE_ENV !== 'development' || typeof window === 'undefined') return;
+    const handler = (event: PromiseRejectionEvent) => {
+      const s =
+        typeof event.reason === 'string'
+          ? event.reason
+          : event.reason?.message ?? event.reason?.toString?.() ?? '';
+      const lower = s.toLowerCase();
+      if (lower.includes('posthog') || lower.includes('ingest')) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('unhandledrejection', handler);
+    return () => window.removeEventListener('unhandledrejection', handler);
+  }, []);
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  useDevThirdPartyRejectionFilter();
   return (
     <ThemeProvider>
       <PosthogInit />

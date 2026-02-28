@@ -118,12 +118,14 @@ export default function TerritoryDetailPage() {
       setInspector(null);
       return;
     }
+    setNotice(null);
     (async () => {
       try {
         const res = await api.get(`/v1/clusters/${selectedClusterId}/inspector`);
         setInspector(res);
-      } catch {
+      } catch (e: any) {
         setInspector(null);
+        setNotice(e?.message ?? 'Failed to load cluster details');
       }
     })();
   }, [selectedClusterId]);
@@ -315,20 +317,22 @@ export default function TerritoryDetailPage() {
       ) : null}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <div className="mb-2 flex items-center justify-between">
+        <div className="flex min-h-0 flex-col rounded-2xl border border-border bg-card p-3">
+          <div className="mb-2 flex shrink-0 items-center justify-between">
             <div className="text-sm font-medium">Territory Map</div>
             <div className="text-xs text-mutedForeground">Click a cluster to inspect</div>
           </div>
-          <OpsMap
-            clusterSetId={clusterSetId}
-            selectedClusterId={selectedClusterId}
-            onSelectCluster={setSelectedClusterId}
-            enablePropertyPoints={false}
-            className="h-[520px]"
-            centerOnClusterId={centerOnClusterId}
-            onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
-          />
+          <div className="min-h-0 flex-1">
+            <OpsMap
+              clusterSetId={clusterSetId}
+              selectedClusterId={selectedClusterId}
+              onSelectCluster={setSelectedClusterId}
+              enablePropertyPoints={false}
+              className="h-full min-h-[400px]"
+              centerOnClusterId={centerOnClusterId}
+              onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
+            />
+          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4">
