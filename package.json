@@ -6,6 +6,7 @@
     "node": "20.x"
   },
   "scripts": {
+    "import:hendricks": "pnpm --filter @block/api run import:hendricks",
     "dev": "turbo run dev --parallel --filter=@block/api --filter=@block/web",
     "build": "turbo run build --filter=@block/api --filter=@block/web",
     "lint": "turbo run lint --filter=@block/api --filter=@block/web",

@@ -63,6 +63,38 @@ export async function clusterSetsRoutes(app: FastifyInstance) {
     return reply.send({ cluster_set: data });
   });
 
+  app.patch('/:id', async (req, reply) => {
+    const ctx = requireManager(req);
+    const { id } = req.params as any;
+    const body = req.body as { name?: string };
+    const name = typeof body?.name === 'string' ? body.name.trim() : undefined;
+    if (name === undefined) return reply.code(400).send({ error: 'name required' });
+    const service = createServiceClient();
+    const { data, error } = await service
+      .from('cluster_sets')
+      .update({ name })
+      .eq('id', id)
+      .eq('org_id', ctx.org_id)
+      .select('*')
+      .single();
+    if (error) return reply.code(400).send({ error: error.message });
+    return reply.send({ cluster_set: data });
+  });
+
+  app.delete('/:id', async (req, reply) => {
+    const ctx = requireManager(req);
+    const { id } = req.params as any;
+    const service = createServiceClient();
+    const { error: deleteErr } = await service
+      .from('cluster_sets')
+      .delete()
+      .eq('id', id)
+      .eq('org_id', ctx.org_id);
+    if (deleteErr) return reply.code(400).send({ error: deleteErr.message });
+    await audit(ctx.org_id, ctx.profile_id, 'clusterset.deleted', { type: 'cluster_set', id }, {});
+    return reply.send({ ok: true });
+  });
+
   app.get('/:id/clusters', async (req, reply) => {
     const ctx = requireManager(req);
     const { id } = req.params as any;

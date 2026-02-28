@@ -10,7 +10,8 @@ export const DEV_ME = {
   id: '00000000-0000-4000-8000-000000000001',
   email: 'stephenonochie@gmail.com',
   name: 'Dev User',
-  role: 'admin' as const
+  role: 'admin' as const,
+  org_name: 'Dev Org'
 };
 
 /** Credentials for dev-only login (no API). */

@@ -53,22 +53,28 @@ export function OpsMap({
   selectedClusterId,
   onSelectCluster,
   enablePropertyPoints = true,
-  className
+  className,
+  centerOnClusterId = null,
+  onCenterRequestedFulfilled
 }: {
   clusterSetId: string | null;
   selectedClusterId: string | null;
   onSelectCluster: (id: string) => void;
   enablePropertyPoints?: boolean;
   className?: string;
+  centerOnClusterId?: string | null;
+  onCenterRequestedFulfilled?: () => void;
 }) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<mapboxgl.Map | null>(null);
+  const loadedMapRef = React.useRef<mapboxgl.Map | null>(null);
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 
   const [clusters, setClusters] = React.useState<ClusterRow[]>([]);
   const [reps, setReps] = React.useState<RepRow[]>([]);
   const [repLocs, setRepLocs] = React.useState<RepLocationRow[]>([]);
+  const [mapStyleLoaded, setMapStyleLoaded] = React.useState(false);
 
   // Load clusters + reps
   React.useEffect(() => {
@@ -129,6 +135,8 @@ export function OpsMap({
     map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
     map.on('load', () => {
+      loadedMapRef.current = map;
+      setMapStyleLoaded(true);
       map.addSource('clusters-polygons', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('clusters-centers', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('rep-locations', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
@@ -228,44 +236,45 @@ export function OpsMap({
       map.on('mouseleave', 'clusters-centers', () => {
         map.getCanvas().style.cursor = '';
       });
+
+      const handleClusterClick = (e: mapboxgl.MapLayerMouseEvent) => {
+        const feat = e.features?.[0] as any;
+        const id = feat?.properties?.id;
+        if (id) onSelectCluster(String(id));
+      };
+      map.on('click', 'clusters-fill', handleClusterClick);
+      map.on('click', 'clusters-outline', handleClusterClick);
+      map.on('mouseenter', 'clusters-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'clusters-fill', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'clusters-outline', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'clusters-outline', () => { map.getCanvas().style.cursor = ''; });
     });
 
     mapRef.current = map;
 
     return () => {
       mapRef.current = null;
-      const m = map;
-      const isAbort = (e: any) => e?.name === 'AbortError' || e?.code === 20;
-      const onUnhandled = (ev: PromiseRejectionEvent) => {
-        if (isAbort(ev?.reason)) {
-          ev.preventDefault();
-          window.removeEventListener('unhandledrejection', onUnhandled);
-        }
-      };
-      window.addEventListener('unhandledrejection', onUnhandled);
-      const t = setTimeout(() => window.removeEventListener('unhandledrejection', onUnhandled), 2000);
-      try {
-        m.remove();
-      } catch (_e) {
-        // sync AbortError or other teardown errors
-      }
+      loadedMapRef.current = null;
+      setMapStyleLoaded(false);
+      // Skip map.remove(): Mapbox v3 triggers an internal AbortError (from a promise we cannot
+      // reference) that still surfaces as unhandled. React will remove the container on unmount.
     };
   }, [token, onSelectCluster]);
 
-  // Update cluster overlays
+  // Update cluster overlays (polygons + centers). When enablePropertyPoints is false we still draw clusters.
   React.useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapStyleLoaded) return;
+    if (map !== loadedMapRef.current) return;
 
     if (!enablePropertyPoints) {
       (map.getSource('properties') as mapboxgl.GeoJSONSource | undefined)?.setData({
         type: 'FeatureCollection',
         features: []
       } as any);
-      return;
     }
-    if (!map.isStyleLoaded()) return;
-
+    // When mapStyleLoaded is true we already ran the map 'load' callback and added sources.
+    // map.isStyleLoaded() can still be false briefly; skip that check so we always apply cluster data.
     const repNameById = new Map(reps.map((r) => [r.id, r.name]));
 
     const polyFeatures: any[] = [];
@@ -310,7 +319,6 @@ export function OpsMap({
       type: 'FeatureCollection',
       features: polyFeatures
     } as any);
-
     (map.getSource('clusters-centers') as mapboxgl.GeoJSONSource | undefined)?.setData({
       type: 'FeatureCollection',
       features: centerFeatures
@@ -322,7 +330,22 @@ export function OpsMap({
       for (const c of clusters) b.extend([c.center_lng, c.center_lat]);
       if (!b.isEmpty()) map.fitBounds(b, { padding: 70, duration: 450, maxZoom: 14 });
     }
-  }, [clusters, reps, selectedClusterId]);
+  }, [clusters, reps, selectedClusterId, enablePropertyPoints, mapStyleLoaded]);
+
+  // Center map on a specific cluster when requested (e.g. from Assignment Table row click)
+  React.useEffect(() => {
+    if (!centerOnClusterId) return;
+    const map = loadedMapRef.current;
+    if (!map) return;
+    const cluster = clusters.find((c) => c.id === centerOnClusterId);
+    if (!cluster) return;
+    map.flyTo({
+      center: [cluster.center_lng, cluster.center_lat],
+      zoom: 15,
+      duration: 500
+    });
+    onCenterRequestedFulfilled?.();
+  }, [centerOnClusterId, clusters, onCenterRequestedFulfilled]);
 
   // Update rep locations + compute "rep in cluster" indicator
   React.useEffect(() => {
@@ -452,7 +475,7 @@ export function OpsMap({
     map.on('moveend', handler);
     map.on('zoomend', handler);
 
-    // initial
+    // initial (debounced fn returns void; rejections are handled inside fetchProperties try/catch)
     fetchProperties();
 
     return () => {

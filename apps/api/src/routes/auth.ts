@@ -99,7 +99,13 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.get('/me', async (req, reply) => {
     if (!req.ctx) return reply.code(401).send({ error: 'Unauthorized' });
+    const service = createServiceClient();
     if (req.ctx.user_id === DEV_ACCOUNT.userId) {
+      const { data: org } = await service
+        .from('organizations')
+        .select('name')
+        .eq('id', DEV_ACCOUNT.orgId)
+        .single();
       return reply.send({
         user: {
           id: DEV_ACCOUNT.userId,
@@ -107,17 +113,25 @@ export async function authRoutes(app: FastifyInstance) {
           role: 'admin',
           name: 'Dev User',
           email: DEV_ACCOUNT.email,
+          org_name: org?.name ?? 'Dev Org',
           created_at: new Date().toISOString()
         }
       });
     }
-    const service = createServiceClient();
     const { data: profile } = await service
       .from('profiles')
       .select('id, org_id, role, name, email, created_at')
       .eq('id', req.ctx.user_id)
       .single();
-    return reply.send({ user: profile });
+    if (!profile) return reply.code(403).send({ error: 'No profile' });
+    const { data: org } = await service
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.org_id)
+      .single();
+    return reply.send({
+      user: { ...profile, org_name: org?.name ?? null }
+    });
   });
 
   // Mobile push token (MVP: accept + store later)

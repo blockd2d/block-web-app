@@ -12,15 +12,16 @@ export default function JoinPage() {
         <Section>
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primaryForeground shadow-soft">
-                <span className="text-sm font-extrabold">B</span>
-              </div>
+              <img src="/block-logo-icon.png" alt="Block" className="h-9 w-9 shrink-0 object-contain" />
               <div className="leading-tight">
                 <div className="text-sm font-semibold">Block</div>
                 <div className="text-xs text-mutedForeground">Join</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/" className="text-sm text-mutedForeground hover:text-foreground">
+                ← Back
+              </Link>
               <Link href="/login">
                 <Button variant="secondary" size="sm">
                   Sign in

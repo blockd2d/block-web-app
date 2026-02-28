@@ -39,7 +39,7 @@ export async function clustersRoutes(app: FastifyInstance) {
 
     let query = service
       .from('clusters')
-      .select('id,cluster_set_id,assigned_rep_id,center_lat,center_lng,hull_geojson,stats_json,color,created_at')
+      .select('id,cluster_set_id,name,assigned_rep_id,center_lat,center_lng,hull_geojson,stats_json,color,created_at')
       .eq('org_id', ctx.org_id)
       .eq('cluster_set_id', cluster_set_id)
       .order('created_at', { ascending: true })
@@ -130,6 +130,27 @@ export async function clustersRoutes(app: FastifyInstance) {
     return reply.send({ cluster });
   });
 
+  app.patch('/:id', async (req, reply) => {
+    const ctx = requireManager(req);
+    const { id } = req.params as any;
+    const body = req.body as { name?: string | null };
+    const name = body && 'name' in body ? (body.name === null || body.name === '' ? null : String(body.name).trim()) : undefined;
+    if (name === undefined) return reply.code(400).send({ error: 'name required (string or null)' });
+    const service = createServiceClient();
+    const { data, error } = await service
+      .from('clusters')
+      .update({ name: name || null })
+      .eq('id', id)
+      .eq('org_id', ctx.org_id)
+      .select('id,name,assigned_rep_id')
+      .single();
+    if (error) {
+      if (error.code === 'PGRST116') return reply.code(404).send({ error: 'Not found' });
+      return reply.code(400).send({ error: error.message });
+    }
+    return reply.send({ cluster: data });
+  });
+
   // Properties in a cluster
   app.get('/:id/properties', async (req, reply) => {
     const ctx = requireAnyAuthed(req);
@@ -175,7 +196,7 @@ export async function clustersRoutes(app: FastifyInstance) {
 
     const { data: cluster, error } = await service
       .from('clusters')
-      .select('id,org_id,cluster_set_id,center_lat,center_lng,assigned_rep_id,stats_json,color')
+      .select('id,name,org_id,cluster_set_id,center_lat,center_lng,assigned_rep_id,stats_json,color,hull_geojson')
       .eq('org_id', ctx.org_id)
       .eq('id', id)
       .single();
@@ -203,6 +224,44 @@ export async function clustersRoutes(app: FastifyInstance) {
     const total_properties = property_ids.length;
     const total_potential = propRows.reduce((acc: number, p: any) => acc + (p.value_estimate ? Number(p.value_estimate) : 0), 0);
     const avg_value = total_properties > 0 ? total_potential / total_properties : 0;
+
+    // Neighborhoods (distinct ZIPs) and drive-to destination (southernmost property)
+    let zip_codes: string[] = [];
+    let drive_to_destination: { address1?: string; city?: string; state?: string; zip?: string } | null = null;
+    if (property_ids.length > 0) {
+      const { data: addrRows, error: addrErr } = await service
+        .from('cluster_properties')
+        .select('property_id, properties:property_id(id,address1,city,state,zip,lat,lng)')
+        .eq('org_id', ctx.org_id)
+        .eq('cluster_id', id)
+        .limit(50000);
+      if (!addrErr && addrRows?.length) {
+        const props = (addrRows as any[]).map((r: any) => r.properties).filter(Boolean) as { id: string; address1?: string; city?: string; state?: string; zip?: string; lat?: number; lng?: number }[];
+        const zips = new Set<string>();
+        for (const p of props) {
+          if (p.zip && String(p.zip).trim()) zips.add(String(p.zip).trim());
+        }
+        zip_codes = Array.from(zips).sort();
+        const southernmost = props
+          .filter((p) => p.lat != null && Number.isFinite(Number(p.lat)))
+          .sort((a, b) => {
+            const latA = Number(a.lat);
+            const latB = Number(b.lat);
+            if (latA !== latB) return latA - latB;
+            const lngA = Number(a.lng ?? 0);
+            const lngB = Number(b.lng ?? 0);
+            return lngA - lngB;
+          })[0];
+        if (southernmost) {
+          drive_to_destination = {
+            address1: southernmost.address1 ?? undefined,
+            city: southernmost.city ?? undefined,
+            state: southernmost.state ?? undefined,
+            zip: southernmost.zip ?? undefined
+          };
+        }
+      }
+    }
 
     // Latest interaction per property for outcome breakdown
     const outcome_counts: Record<string, number> = {};
@@ -299,7 +358,9 @@ export async function clustersRoutes(app: FastifyInstance) {
         unworked,
         outcome_counts,
         avg_value
-      }
+      },
+      zip_codes,
+      drive_to_destination
     });
 
   });

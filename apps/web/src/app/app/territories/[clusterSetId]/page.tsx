@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Pencil } from 'lucide-react';
 import { Button } from '../../../../ui/button';
 import { Input } from '../../../../ui/input';
 import { api } from '../../../../lib/api';
@@ -19,6 +21,7 @@ type Rep = {
 type Cluster = {
   id: string;
   cluster_set_id: string;
+  name?: string | null;
   assigned_rep_id: string | null;
   center_lat: number;
   center_lng: number;
@@ -33,13 +36,16 @@ type Inspector = {
     total_potential: number;
     status_rollups: Record<string, number>;
   };
+  zip_codes?: string[];
+  drive_to_destination?: { address1?: string; city?: string; state?: string; zip?: string } | null;
 };
 
 type Suggestion = {
   cluster_id: string;
   rep_id: string;
-  distance_km: number;
-  score: number;
+  distance_miles?: number;
+  distance_km?: number;
+  score?: number;
 };
 
 function repName(reps: Rep[], id: string | null) {
@@ -64,8 +70,22 @@ export default function TerritoryDetailPage() {
 
   const [suggestions, setSuggestions] = React.useState<Suggestion[] | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
+  const [centerOnClusterId, setCenterOnClusterId] = React.useState<string | null>(null);
+  const [clusterSetName, setClusterSetName] = React.useState<string | null>(null);
+  const [editingClusterSetName, setEditingClusterSetName] = React.useState(false);
+  const [clusterSetNameDraft, setClusterSetNameDraft] = React.useState('');
+  const [savingClusterSetName, setSavingClusterSetName] = React.useState(false);
+  const [editingClusterName, setEditingClusterName] = React.useState(false);
+  const [clusterNameDraft, setClusterNameDraft] = React.useState('');
+  const [savingClusterName, setSavingClusterName] = React.useState(false);
 
   const selectedCluster = clusters.find((c) => c.id === selectedClusterId) ?? null;
+
+  React.useEffect(() => {
+    api.get(`/v1/cluster-sets/${clusterSetId}`)
+      .then((r: any) => setClusterSetName(r.cluster_set?.name ?? null))
+      .catch(() => setClusterSetName(null));
+  }, [clusterSetId]);
 
   const loadAll = React.useCallback(async () => {
     setLoading(true);
@@ -128,7 +148,7 @@ export default function TerritoryDetailPage() {
     setNotice(null);
     try {
       const res = await api.get(`/v1/cluster-sets/${clusterSetId}/suggest-assignments`);
-      setSuggestions(res.items ?? []);
+      setSuggestions(res.suggestions ?? []);
     } catch (e: any) {
       setNotice(e?.message ?? 'Failed to generate suggestions');
     }
@@ -164,6 +184,67 @@ export default function TerritoryDetailPage() {
     }
   }
 
+  async function saveClusterSetName() {
+    const name = clusterSetNameDraft.trim();
+    if (!name) {
+      setEditingClusterSetName(false);
+      return;
+    }
+    setSavingClusterSetName(true);
+    setNotice(null);
+    try {
+      await api(`/v1/cluster-sets/${clusterSetId}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+      setClusterSetName(name);
+      setEditingClusterSetName(false);
+    } catch (e: any) {
+      setNotice(e?.message ?? 'Failed to rename cluster set');
+    } finally {
+      setSavingClusterSetName(false);
+    }
+  }
+
+  function startEditClusterSetName() {
+    setClusterSetNameDraft(clusterSetName ?? '');
+    setEditingClusterSetName(true);
+  }
+
+  async function saveClusterName() {
+    if (!selectedClusterId) return;
+    setSavingClusterName(true);
+    setNotice(null);
+    try {
+      await api(`/v1/clusters/${selectedClusterId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: clusterNameDraft.trim() || null })
+      });
+      setClusters((prev) =>
+        prev.map((c) =>
+          c.id === selectedClusterId ? { ...c, name: clusterNameDraft.trim() || null } : c
+        )
+      );
+      if (inspector?.cluster) {
+        setInspector({
+          ...inspector,
+          cluster: { ...inspector.cluster, name: clusterNameDraft.trim() || null }
+        });
+      }
+      setEditingClusterName(false);
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      setNotice(msg === 'Not found' ? 'Cluster not found or already deleted.' : (msg || 'Failed to rename cluster'));
+      if (msg === 'Not found') {
+        setInspector(null);
+        setSelectedClusterId(null);
+      }
+    } finally {
+      setSavingClusterName(false);
+    }
+  }
+
+  function clusterDisplayName(c: Cluster) {
+    return c.name?.trim() || `Cluster ${c.id.slice(0, 8)}`;
+  }
+
   function nearestRep(c: Cluster) {
     if (!reps.length) return null;
     let best: { rep: Rep; d: number } | null = null;
@@ -178,8 +259,49 @@ export default function TerritoryDetailPage() {
     <div className="p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
+          <Link
+            href="/app/territories"
+            className="mb-1 inline-flex items-center gap-1 text-sm text-mutedForeground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to cluster sets
+          </Link>
           <div className="text-xl font-semibold">Territories</div>
-          <div className="mt-1 text-sm text-mutedForeground">Cluster set: {clusterSetId}</div>
+          <div className="mt-1 flex items-center gap-2 text-sm text-mutedForeground">
+            {editingClusterSetName ? (
+              <>
+                <Input
+                  value={clusterSetNameDraft}
+                  onChange={(e) => setClusterSetNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveClusterSetName();
+                    if (e.key === 'Escape') setEditingClusterSetName(false);
+                  }}
+                  className="h-8 w-48 text-sm"
+                  autoFocus
+                  disabled={savingClusterSetName}
+                />
+                <Button variant="ghost" size="sm" onClick={() => setEditingClusterSetName(false)} disabled={savingClusterSetName}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={saveClusterSetName} disabled={savingClusterSetName || !clusterSetNameDraft.trim()}>
+                  {savingClusterSetName ? 'Saving…' : 'Save'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <span>{clusterSetName ?? `Cluster set: ${clusterSetId}`}</span>
+                <button
+                  type="button"
+                  onClick={startEditClusterSetName}
+                  className="rounded p-0.5 text-mutedForeground hover:bg-muted hover:text-foreground"
+                  aria-label="Rename cluster set"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => exportAssignments('csv')}>Export CSV</Button>
@@ -204,6 +326,8 @@ export default function TerritoryDetailPage() {
             onSelectCluster={setSelectedClusterId}
             enablePropertyPoints={false}
             className="h-[520px]"
+            centerOnClusterId={centerOnClusterId}
+            onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
           />
         </div>
 
@@ -211,7 +335,7 @@ export default function TerritoryDetailPage() {
           <div className="flex items-center justify-between">
             <div className="text-sm font-semibold">Cluster Inspector</div>
             {selectedCluster ? (
-              <div className="text-xs text-mutedForeground">{selectedClusterId}</div>
+              <div className="text-xs text-mutedForeground">{clusterDisplayName(selectedCluster)}</div>
             ) : null}
           </div>
 
@@ -219,6 +343,46 @@ export default function TerritoryDetailPage() {
             <div className="mt-4 text-sm text-mutedForeground">Select a cluster on the map to inspect details.</div>
           ) : inspector ? (
             <div className="mt-4 space-y-3 text-sm">
+              <div className="rounded-xl border border-border bg-background/50 p-3">
+                <div className="text-xs text-mutedForeground">Cluster name</div>
+                {editingClusterName ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      value={clusterNameDraft}
+                      onChange={(e) => setClusterNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveClusterName();
+                        if (e.key === 'Escape') setEditingClusterName(false);
+                      }}
+                      className="h-9 flex-1 text-sm"
+                      placeholder={clusterDisplayName(selectedCluster)}
+                      autoFocus
+                      disabled={savingClusterName}
+                    />
+                    <Button variant="ghost" size="sm" onClick={() => setEditingClusterName(false)} disabled={savingClusterName}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={saveClusterName} disabled={savingClusterName}>
+                      {savingClusterName ? 'Saving…' : 'Save'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="font-medium">{clusterDisplayName(selectedCluster)}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClusterNameDraft(selectedCluster.name ?? '');
+                        setEditingClusterName(true);
+                      }}
+                      className="rounded p-0.5 text-mutedForeground hover:bg-muted hover:text-foreground"
+                      aria-label="Rename cluster"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="text-xs text-mutedForeground">Houses</div>
@@ -246,6 +410,31 @@ export default function TerritoryDetailPage() {
                     <div className="text-xs text-mutedForeground">Nearest rep</div>
                     <div className="mt-1 font-medium">{n.rep.name}</div>
                     <div className="text-xs text-mutedForeground">{n.d.toFixed(2)} km from home base</div>
+                  </div>
+                );
+              })()}
+
+              {(inspector.zip_codes?.length ?? 0) > 0 ? (
+                <div className="rounded-xl border border-border bg-background/50 p-3">
+                  <div className="text-xs text-mutedForeground">Neighborhoods (ZIPs)</div>
+                  <div className="mt-1 text-sm font-medium">{inspector.zip_codes!.join(', ')}</div>
+                </div>
+              ) : null}
+
+              {(() => {
+                const d = inspector.drive_to_destination;
+                const parts = d
+                  ? [
+                      d.address1,
+                      [d.city, d.state].filter(Boolean).join(', '),
+                      d.zip
+                    ].filter(Boolean)
+                  : [];
+                if (parts.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-border bg-background/50 p-3">
+                    <div className="text-xs text-mutedForeground">Drive to destination</div>
+                    <div className="mt-1 text-sm">{parts.join(' — ')}</div>
                   </div>
                 );
               })()}
@@ -343,22 +532,30 @@ export default function TerritoryDetailPage() {
               {clusters.map((c) => {
                 const n = nearestRep(c);
                 const s = suggestions?.find((x) => x.cluster_id === c.id) ?? null;
+                const isSelected = c.id === selectedClusterId;
                 return (
-                  <tr key={c.id} className="border-t border-border">
-                    <td className="p-2">
+                  <tr
+                    key={c.id}
+                    className={`border-t border-border cursor-pointer ${isSelected ? 'bg-muted/60' : ''} hover:bg-muted/40`}
+                    onClick={() => {
+                      setSelectedClusterId(c.id);
+                      setCenterOnClusterId(c.id);
+                    }}
+                  >
+                    <td className="p-2" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={!!bulkIds[c.id]}
                         onChange={(e) => setBulkIds((prev) => ({ ...prev, [c.id]: e.target.checked }))}
                       />
                     </td>
-                    <td className="p-2 font-mono text-xs">{c.id.slice(0, 8)}…</td>
+                    <td className="p-2 font-medium">{clusterDisplayName(c)}</td>
                     <td className="p-2">{fmtNumber(c.stats_json?.size ?? 0)}</td>
                     <td className="p-2">{fmtCurrency(c.stats_json?.total_potential ?? 0)}</td>
                     <td className="p-2">{repName(reps, c.assigned_rep_id)}</td>
                     <td className="p-2">{n ? n.rep.name : '—'}</td>
                     <td className="p-2">{n ? `${n.d.toFixed(2)} km` : '—'}</td>
-                    <td className="p-2">{s ? `${repName(reps, s.rep_id)} (${s.distance_km.toFixed(1)} km)` : '—'}</td>
+                    <td className="p-2">{s ? `${repName(reps, s.rep_id)} (${(s.distance_miles ?? s.distance_km ?? 0).toFixed(1)} mi)` : '—'}</td>
                   </tr>
                 );
               })}

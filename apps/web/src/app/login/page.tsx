@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { LoginSchema } from '@blockd2d/shared';
 import { api, ApiError } from '../../lib/api';
-import { isDevLogin, setDevSession } from '../../lib/dev-auth';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
@@ -18,25 +16,12 @@ function LoginForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showDevLogin, setShowDevLogin] = useState(false);
-
-  useEffect(() => {
-    setShowDevLogin(true);
-  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      // Dev account: sign in without any API request
-      if (isDevLogin(email, password)) {
-        setDevSession();
-        const next = searchParams.get('next');
-        const dest = next && next.startsWith('/app') ? next : '/app/dashboard';
-        window.location.href = dest;
-        return;
-      }
       const payload = LoginSchema.parse({ email, password, turnstileToken });
       await api.post('/v1/auth/login', payload);
       const next = searchParams.get('next');
@@ -59,9 +44,20 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen grid place-items-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-soft">
-        <h1 className="text-2xl font-semibold">Block</h1>
-        <p className="mt-1 text-sm text-mutedForeground">Sign in (admin/manager)</p>
+      <div className="flex w-full max-w-md flex-col items-center gap-4">
+        <div className="w-full max-w-md text-left">
+          <Link href="/" className="text-sm text-mutedForeground hover:text-foreground">
+            ← Back
+          </Link>
+        </div>
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <div className="flex items-center gap-3">
+          <img src="/block-logo-icon.png" alt="Block" className="h-10 w-10 shrink-0 object-contain" />
+          <div>
+            <h1 className="text-2xl font-semibold">Block</h1>
+            <p className="mt-0.5 text-sm text-mutedForeground">Sign in (admin/manager)</p>
+          </div>
+        </div>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
           <div>
@@ -107,30 +103,9 @@ function LoginForm() {
           </Link>
         </div>
 
-        {showDevLogin ? (
-          <div className="mt-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                try {
-                  setDevSession();
-                  const next = searchParams.get('next');
-                  const dest = (next && next.startsWith('/app') ? next : '/app/dashboard');
-                  router.replace(dest);
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Dev sign-in failed');
-                }
-              }}
-            >
-              Dev sign-in (no API)
-            </Button>
-          </div>
-        ) : null}
-
         <div className="mt-4 text-xs text-mutedForeground">
           Need access? Ask an admin for an invite link.
+        </div>
         </div>
       </div>
     </div>

@@ -53,9 +53,7 @@ export default function MarketingPage() {
         <Section>
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primaryForeground shadow-soft">
-                <span className="text-sm font-extrabold">B</span>
-              </div>
+              <img src="/block-logo-icon.png" alt="Block" className="h-9 w-9 shrink-0 object-contain" />
               <div className="leading-tight">
                 <div className="text-sm font-semibold">Block</div>
                 <div className="text-xs text-mutedForeground">Territory + Ops</div>
@@ -238,11 +236,9 @@ export default function MarketingPage() {
                 <div className="text-sm font-semibold">{t.name}</div>
                 <div className="mt-2 text-sm text-mutedForeground">{t.desc}</div>
                 <div className="mt-6">
-                  <Link href="/login">
-                    <Button variant={t.emphasis ? 'primary' : 'secondary'} className="w-full">
+                  <a href="/login" className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-medium ${t.emphasis ? 'bg-primary text-primaryForeground hover:opacity-90' : 'border border-border bg-secondary text-secondaryForeground hover:opacity-90'}`}>
                       Talk to sales
-                    </Button>
-                  </Link>
+                    </a>
                 </div>
               </div>
             ))}

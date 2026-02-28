@@ -62,6 +62,7 @@ model clusters {
   id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id             String               @db.Uuid
   cluster_set_id     String               @db.Uuid
+  name               String?
   center_lat         Float
   center_lng         Float
   hull_geojson       Json

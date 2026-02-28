@@ -17,7 +17,8 @@
     "worker": "node dist/worker.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed:dev": "tsx src/scripts/seed-dev.ts",
-    "seed:client": "tsx src/scripts/seed-dev-client.ts"
+    "seed:client": "tsx src/scripts/seed-dev-client.ts",
+    "import:hendricks": "tsx src/scripts/import-hendricks-properties.ts"
   },
   "dependencies": {
   "@blockd2d/shared": "^0.1.2",
@@ -38,6 +39,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "@types/node": "^22.10.0",
     "@types/pdfkit": "^0.13.9",
     "prisma": "^7.2.0",

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { X, Trash2, Pencil } from 'lucide-react';
 import { Input } from '../../../ui/input';
 import { Button } from '../../../ui/button';
 import { api } from '../../../lib/api';
@@ -31,6 +32,12 @@ export default function TerritoriesPage() {
   const [excludeDNK, setExcludeDNK] = React.useState(true);
   const [onlyUnworked, setOnlyUnworked] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<ClusterSet | null>(null);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+  const [editClusterSetId, setEditClusterSetId] = React.useState<string | null>(null);
+  const [editClusterSetName, setEditClusterSetName] = React.useState('');
+  const [savingName, setSavingName] = React.useState(false);
 
   async function load() {
     const [cs, c] = await Promise.all([api('/v1/cluster-sets'), api('/v1/counties')]);
@@ -45,6 +52,58 @@ export default function TerritoriesPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api(`/v1/cluster-sets/${deleteTarget.id}`, { method: 'DELETE' });
+      setClusterSets((prev) => prev.filter((cs) => cs.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e: any) {
+      const isNotFound = e?.status === 404 || e?.message === 'Not found';
+      setDeleteError(isNotFound ? 'Cluster set not found or already deleted.' : (e?.message || 'Failed to delete cluster set'));
+      if (isNotFound) {
+        setClusterSets((prev) => prev.filter((cs) => cs.id !== deleteTarget.id));
+        setDeleteTarget(null);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function startRename(cs: ClusterSet) {
+    setEditClusterSetId(cs.id);
+    setEditClusterSetName(cs.name);
+  }
+
+  async function saveRename() {
+    if (!editClusterSetId || !editClusterSetName.trim()) {
+      setEditClusterSetId(null);
+      return;
+    }
+    setSavingName(true);
+    setError(null);
+    try {
+      await api(`/v1/cluster-sets/${editClusterSetId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: editClusterSetName.trim() })
+      });
+      setClusterSets((prev) =>
+        prev.map((c) => (c.id === editClusterSetId ? { ...c, name: editClusterSetName.trim() } : c))
+      );
+      setEditClusterSetId(null);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to rename');
+    } finally {
+      setSavingName(false);
+    }
+  }
+
+  function cancelRename() {
+    setEditClusterSetId(null);
+  }
 
   async function createClusterSet() {
     setCreating(true);
@@ -171,9 +230,39 @@ export default function TerritoriesPage() {
               {clusterSets.length ? (
                 clusterSets.map((cs) => (
                   <div key={cs.id} className="flex items-center justify-between gap-3 p-4">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium">{cs.name}</span>
+                        {editClusterSetId === cs.id ? (
+                          <div className="flex flex-1 items-center gap-2">
+                            <Input
+                              value={editClusterSetName}
+                              onChange={(e) => setEditClusterSetName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') saveRename();
+                                if (e.key === 'Escape') cancelRename();
+                              }}
+                              onBlur={() => saveRename()}
+                              className="h-8 flex-1 text-sm"
+                              autoFocus
+                              disabled={savingName}
+                            />
+                            <Button variant="ghost" size="sm" onClick={cancelRename} disabled={savingName}>
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="truncate text-sm font-medium">{cs.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => startRename(cs)}
+                              className="rounded p-0.5 text-mutedForeground hover:bg-muted hover:text-foreground"
+                              aria-label="Rename"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
                         <span
                           className={
                             cs.status === 'complete'
@@ -190,9 +279,20 @@ export default function TerritoriesPage() {
                         radius {cs.radius_m}m • min {cs.min_houses} houses
                       </div>
                     </div>
-                    <Link href={`/app/territories/${cs.id}`} className="shrink-0 text-sm text-primary hover:underline">
-                      Open & assign
-                    </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-mutedForeground hover:text-destructive"
+                        onClick={() => setDeleteTarget(cs)}
+                        aria-label="Delete cluster set"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Link href={`/app/territories/${cs.id}`} className="text-sm text-primary hover:underline">
+                        Open & assign
+                      </Link>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -202,6 +302,36 @@ export default function TerritoriesPage() {
           </div>
         </div>
       </div>
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-start justify-between gap-2">
+              <h2 id="delete-dialog-title" className="text-sm font-semibold">Delete cluster set</h2>
+              <button
+                type="button"
+                onClick={() => { setDeleteTarget(null); setDeleteError(null); }}
+                className="rounded-lg p-1 text-mutedForeground hover:bg-muted hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-mutedForeground">
+              This action cannot be undone if proceeded. The cluster set &quot;{deleteTarget.name}&quot; and all its clusters will be permanently removed.
+            </p>
+            {deleteError ? <div className="mt-3 text-sm text-destructive">{deleteError}</div> : null}
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="default" onClick={() => { setDeleteTarget(null); setDeleteError(null); }} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={confirmDelete} disabled={deleting} className="border-destructive/50 text-destructive hover:bg-destructive/10">
+                {deleting ? 'Deleting…' : 'Proceed'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

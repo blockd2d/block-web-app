@@ -4,6 +4,10 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  icons: {
+    icon: '/block-logo-icon.png',
+    apple: '/block-logo-icon.png',
+  },
   title: {
     default: "Block — Territory + Sales Ops",
     template: "%s · Block",

@@ -9,6 +9,7 @@ export type Me = {
   email?: string | null;
   name?: string | null;
   role?: 'admin' | 'manager' | 'rep' | 'labor' | (string & {});
+  org_name?: string | null;
 };
 
 type MeState = {
