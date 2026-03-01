@@ -95,7 +95,8 @@ export async function POST(req: Request) {
     const from = process.env.POSTMARK_FROM_EMAIL || 'admin@blockd2d.com';
     const adminTo = 'admin@blockd2d.com';
     const appBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3000';
-    const statusLink = `${String(appBaseUrl).replace(/\\/$/, '')}/join/status/${encodeURIComponent(insert.data.public_token)}`;
+    const base = String(appBaseUrl).replace(new RegExp('/$'), '');
+    const statusLink = `${base}/join/status/${encodeURIComponent(insert.data.public_token)}`;
 
     await sendPostmarkEmail({
       From: from,
