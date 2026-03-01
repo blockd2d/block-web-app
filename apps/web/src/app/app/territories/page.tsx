@@ -322,10 +322,10 @@ export default function TerritoriesPage() {
             </p>
             {deleteError ? <div className="mt-3 text-sm text-destructive">{deleteError}</div> : null}
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="default" onClick={() => { setDeleteTarget(null); setDeleteError(null); }} disabled={deleting}>
+              <Button variant="primary" onClick={() => { setDeleteTarget(null); setDeleteError(null); }} disabled={deleting}>
                 Cancel
               </Button>
-              <Button variant="outline" onClick={confirmDelete} disabled={deleting} className="border-destructive/50 text-destructive hover:bg-destructive/10">
+              <Button variant="ghost" onClick={confirmDelete} disabled={deleting} className="border-destructive/50 text-destructive hover:bg-destructive/10">
                 {deleting ? 'Deleting…' : 'Proceed'}
               </Button>
             </div>
