@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
+/** On Vercel, require a real API URL so login and API calls work in production. */
+function getApiBase(): string {
+  const base = API_BASE.replace(/\/$/, '');
+  const isVercel = process.env.VERCEL === '1';
+  const isLocalhost =
+    !process.env.NEXT_PUBLIC_API_URL || /^https?:\/\/localhost(\b|:)/i.test(base);
+  if (isVercel && isLocalhost) {
+    throw new Error(
+      'NEXT_PUBLIC_API_URL must be set in Vercel to your production Block API URL (e.g. https://your-api.railway.app). It is currently unset or localhost, so API and login requests would fail.'
+    );
+  }
+  return base;
+}
+
 /** Headers we forward from the client to the API */
 const FORWARD_REQUEST_HEADERS = [
   'content-type',
@@ -74,9 +88,19 @@ async function proxy(
   context: { params: Promise<{ path?: string[] }> },
   method: string
 ) {
+  let base: string;
+  try {
+    base = getApiBase();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'API base URL not configured';
+    return NextResponse.json(
+      { error: msg },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
   const { path: pathSegments } = await context.params;
   const path = pathSegments?.length ? `/${pathSegments.join('/')}` : '';
-  const url = `${API_BASE.replace(/\/$/, '')}${path}${req.nextUrl.search}`;
+  const url = `${base}${path}${req.nextUrl.search}`;
 
   const headers = new Headers();
   for (const name of FORWARD_REQUEST_HEADERS) {

@@ -28,7 +28,9 @@ function LoginForm() {
       const dest = next && next.startsWith('/app') ? next : '/app/dashboard';
       window.location.href = dest;
     } catch (err: any) {
-      if (err instanceof ApiError && err.status === 404) {
+      if (err instanceof ApiError && err.status === 503) {
+        setError(err?.message || 'API is not configured for this environment. Set NEXT_PUBLIC_API_URL in Vercel to your production Block API URL.');
+      } else if (err instanceof ApiError && err.status === 404) {
         setError(
           'Login request failed (404). Check that the API is running and NEXT_PUBLIC_API_URL points to the Block API (e.g. http://localhost:4000).'
         );
