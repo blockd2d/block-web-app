@@ -32,16 +32,25 @@ async function main() {
 
       try {
         const result = await processJob(service, job);
+        console.log('Job complete', { job_id: job.id, type: job.type, result });
         await service
           .from('jobs_queue')
           .update({ status: 'complete', progress: 100, finished_at: new Date().toISOString(), result })
           .eq('id', job.id);
       } catch (err: any) {
-        console.error('Job failed', job.id, err);
+        console.error('Job failed', job.id, job.type, err);
+        const errMsg = err?.message || String(err);
         await service
           .from('jobs_queue')
-          .update({ status: 'failed', finished_at: new Date().toISOString(), error: err?.message || String(err) })
+          .update({ status: 'failed', finished_at: new Date().toISOString(), error: errMsg })
           .eq('id', job.id);
+        if (job.type === 'cluster_generate' && job.org_id && job.payload?.cluster_set_id) {
+          await service
+            .from('cluster_sets')
+            .update({ status: 'failed', error: errMsg })
+            .eq('org_id', job.org_id)
+            .eq('id', job.payload.cluster_set_id);
+        }
       }
     } catch (err) {
       console.error('Worker loop error', err);

@@ -22,7 +22,7 @@ export default function ExportsPage() {
 
   async function load() {
     const r = await api.get('/v1/exports');
-    setExportsList(r.exports || []);
+    setExportsList(r.items || []);
   }
 
   useEffect(() => {

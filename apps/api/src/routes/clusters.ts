@@ -253,8 +253,12 @@ export async function clustersRoutes(app: FastifyInstance) {
             return lngA - lngB;
           })[0];
         if (southernmost) {
+          let address1 = southernmost.address1 ?? undefined;
+          if (address1 != null && /^Parcel\s+/i.test(String(address1).trim())) {
+            address1 = undefined;
+          }
           drive_to_destination = {
-            address1: southernmost.address1 ?? undefined,
+            address1,
             city: southernmost.city ?? undefined,
             state: southernmost.state ?? undefined,
             zip: southernmost.zip ?? undefined

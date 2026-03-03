@@ -140,6 +140,7 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
   const cluster_set_id = job.payload?.cluster_set_id as string;
   if (!org_id || !cluster_set_id) throw new Error('missing org_id/cluster_set_id');
 
+  console.log('Cluster generate started', { cluster_set_id, org_id });
   const { data: set } = await client.from('cluster_sets').select('*').eq('org_id', org_id).eq('id', cluster_set_id).single();
   if (!set) throw new Error('cluster_set not found');
 
@@ -200,8 +201,8 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
 
   const clusters = dbscanCluster(points, radius_m, min_houses, (p) => {
     const pct = Math.max(10, Math.min(85, Math.floor(10 + p * 75)));
-    client.from('cluster_sets').update({ progress: pct }).eq('id', cluster_set_id).eq('org_id', org_id);
-    client.from('jobs_queue').update({ progress: pct }).eq('id', job.id);
+    client.from('cluster_sets').update({ progress: pct }).eq('id', cluster_set_id).eq('org_id', org_id).catch(() => {});
+    client.from('jobs_queue').update({ progress: pct }).eq('id', job.id).catch(() => {});
   });
 
   // Clear existing clusters for this set

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { X, Trash2, Pencil } from 'lucide-react';
+import { X, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { Input } from '../../../ui/input';
 import { Button } from '../../../ui/button';
 import { api } from '../../../lib/api';
@@ -38,6 +38,8 @@ export default function TerritoriesPage() {
   const [editClusterSetId, setEditClusterSetId] = React.useState<string | null>(null);
   const [editClusterSetName, setEditClusterSetName] = React.useState('');
   const [savingName, setSavingName] = React.useState(false);
+  const [pollingActive, setPollingActive] = React.useState(false);
+  const pollingStartedAtRef = React.useRef<number | null>(null);
 
   async function load() {
     const [cs, c] = await Promise.all([api('/v1/cluster-sets'), api('/v1/counties')]);
@@ -52,6 +54,30 @@ export default function TerritoriesPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Poll cluster sets every 1s after create until none are queued/running or 5 min cap
+  React.useEffect(() => {
+    if (!pollingActive) return;
+    const interval = setInterval(() => {
+      load().catch(() => {});
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pollingActive]);
+
+  React.useEffect(() => {
+    if (!pollingActive || !clusterSets.length) return;
+    const hasPending = clusterSets.some((cs) => cs.status === 'queued' || cs.status === 'running');
+    if (!hasPending) {
+      setPollingActive(false);
+      pollingStartedAtRef.current = null;
+      return;
+    }
+    const started = pollingStartedAtRef.current;
+    if (started != null && Date.now() - started > 5 * 60 * 1000) {
+      setPollingActive(false);
+      pollingStartedAtRef.current = null;
+    }
+  }, [pollingActive, clusterSets]);
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -122,8 +148,9 @@ export default function TerritoriesPage() {
         }
       };
       const r = await api('/v1/cluster-sets', { method: 'POST', body: JSON.stringify(payload) });
-      // Worker will generate clusters async
       setClusterSets((prev) => [r.cluster_set || r, ...prev]);
+      pollingStartedAtRef.current = Date.now();
+      setPollingActive(true);
     } catch (e: any) {
       setError(e?.message || 'Failed to create cluster set');
     } finally {
@@ -200,10 +227,7 @@ export default function TerritoriesPage() {
 
             {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
 
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-xs text-mutedForeground">
-                Cluster generation runs async in the worker. Refresh in a few seconds.
-              </div>
+            <div className="mt-4 flex items-center justify-end">
               <Button onClick={createClusterSet} disabled={creating || !countyId}>
                 {creating ? 'Creating…' : 'Create'}
               </Button>
@@ -268,10 +292,13 @@ export default function TerritoriesPage() {
                             cs.status === 'complete'
                               ? 'rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-700 dark:text-green-400'
                               : cs.status === 'running' || cs.status === 'queued'
-                                ? 'rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400'
+                                ? 'inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400'
                                 : 'rounded-full bg-muted px-2 py-0.5 text-xs text-mutedForeground'
                           }
                         >
+                          {(cs.status === 'running' || cs.status === 'queued') && (
+                            <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                          )}
                           {cs.status}
                         </span>
                       </div>

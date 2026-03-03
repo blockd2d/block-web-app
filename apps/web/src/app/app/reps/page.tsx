@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { api } from '@/lib/api';
 import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
 import { StatCard } from '@/ui/stat-card';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
@@ -69,6 +70,16 @@ export default function RepsPage() {
   const [selected, setSelected] = React.useState<LeaderRow | null>(null);
   const [repSummary, setRepSummary] = React.useState<Summary | null>(null);
   const [repTs, setRepTs] = React.useState<TSPoint[]>([]);
+  const [fullRep, setFullRep] = React.useState<{
+    id: string;
+    name: string;
+    home_base_lat?: number | null;
+    home_base_lng?: number | null;
+    active?: boolean;
+  } | null>(null);
+  const [homeBaseAddress, setHomeBaseAddress] = React.useState('');
+  const [savingHomeBase, setSavingHomeBase] = React.useState(false);
+  const [homeBaseError, setHomeBaseError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let alive = true;
@@ -107,8 +118,70 @@ export default function RepsPage() {
     };
   }, [selected, range]);
 
+  React.useEffect(() => {
+    if (!selected) {
+      setFullRep(null);
+      return;
+    }
+    let alive = true;
+    api.get('/v1/reps')
+      .then((r: any) => {
+        if (!alive) return;
+        const items = r.items || [];
+        const rep = items.find((x: any) => x.id === selected.rep_id) ?? null;
+        setFullRep(rep ? {
+          id: rep.id,
+          name: rep.name,
+          home_base_lat: rep.home_base_lat ?? rep.home_lat,
+          home_base_lng: rep.home_base_lng ?? rep.home_lng,
+          active: rep.active
+        } : null);
+      })
+      .catch(() => alive && setFullRep(null));
+    return () => { alive = false; };
+  }, [selected]);
+
   const top = leaderboard.slice().sort((a, b) => (b.sold || 0) - (a.sold || 0)).slice(0, 3);
   const bottom = leaderboard.slice().sort((a, b) => (a.sold || 0) - (b.sold || 0)).slice(0, 3);
+
+  async function setHomeBaseFromAddress() {
+    if (!selected || !fullRep || !homeBaseAddress.trim()) return;
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) {
+      setHomeBaseError('Mapbox token not configured');
+      return;
+    }
+    setHomeBaseError(null);
+    setSavingHomeBase(true);
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(homeBaseAddress.trim())}.json?access_token=${token}&limit=1`
+      );
+      const data = await res.json();
+      const feature = data?.features?.[0];
+      if (!feature?.center || !Array.isArray(feature.center)) {
+        setHomeBaseError('Address not found');
+        setSavingHomeBase(false);
+        return;
+      }
+      const [lng, lat] = feature.center;
+      await api(`/v1/reps/${selected.rep_id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: fullRep.name,
+          home_lat: lat,
+          home_lng: lng,
+          active: fullRep.active !== false
+        })
+      });
+      setFullRep((prev) => prev ? { ...prev, home_base_lat: lat, home_base_lng: lng } : null);
+      setHomeBaseAddress('');
+    } catch (e: any) {
+      setHomeBaseError(e?.message || 'Failed to update home base');
+    } finally {
+      setSavingHomeBase(false);
+    }
+  }
 
   return (
     <div className="p-6">
@@ -269,6 +342,33 @@ export default function RepsPage() {
                 <StatCard label="Sold" value={repSummary ? repSummary.sold : '—'} hint={`Close ${fmtPct(repSummary?.close_rate ?? 0)}`} />
                 <StatCard label="Revenue" value={repSummary ? fmtMoney(repSummary.revenue) : '—'} />
                 <StatCard label="Doors/hr" value={repSummary ? repSummary.doors_per_hour.toFixed(1) : '—'} />
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-border bg-background/40 p-4">
+                <div className="text-sm font-semibold">Home base</div>
+                <div className="mt-2 text-xs text-mutedForeground">
+                  {fullRep?.home_base_lat != null && fullRep?.home_base_lng != null
+                    ? `Location: ${Number(fullRep.home_base_lat).toFixed(5)}, ${Number(fullRep.home_base_lng).toFixed(5)}`
+                    : 'Not set — set an address below to use for nearest-rep distance.'}
+                </div>
+                <div className="mt-3 flex flex-wrap items-end gap-2">
+                  <div className="min-w-0 flex-1">
+                    <label className="sr-only">Address</label>
+                    <Input
+                      placeholder="Enter address to set home base"
+                      value={homeBaseAddress}
+                      onChange={(e) => setHomeBaseAddress(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && setHomeBaseFromAddress()}
+                      className="h-10"
+                    />
+                  </div>
+                  <Button size="sm" onClick={setHomeBaseFromAddress} disabled={savingHomeBase || !fullRep}>
+                    {savingHomeBase ? 'Updating…' : 'Set from address'}
+                  </Button>
+                </div>
+                {homeBaseError ? (
+                  <div className="mt-2 text-xs text-destructive">{homeBaseError}</div>
+                ) : null}
               </div>
 
               <div className="mt-6 rounded-2xl border border-border bg-background/40 p-4">

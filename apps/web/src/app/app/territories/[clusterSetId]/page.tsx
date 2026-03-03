@@ -322,16 +322,18 @@ export default function TerritoryDetailPage() {
             <div className="text-sm font-medium">Territory Map</div>
             <div className="text-xs text-mutedForeground">Click a cluster to inspect</div>
           </div>
-          <div className="min-h-0 flex-1">
-            <OpsMap
-              clusterSetId={clusterSetId}
-              selectedClusterId={selectedClusterId}
-              onSelectCluster={setSelectedClusterId}
-              enablePropertyPoints={false}
-              className="h-full min-h-[400px]"
-              centerOnClusterId={centerOnClusterId}
-              onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
-            />
+          <div className="relative w-full min-h-[280px] aspect-video">
+            <div className="absolute inset-0">
+              <OpsMap
+                clusterSetId={clusterSetId}
+                selectedClusterId={selectedClusterId}
+                onSelectCluster={setSelectedClusterId}
+                enablePropertyPoints={false}
+                className="h-full w-full"
+                centerOnClusterId={centerOnClusterId}
+                onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
+              />
+            </div>
           </div>
         </div>
 
@@ -418,12 +420,10 @@ export default function TerritoryDetailPage() {
                 );
               })()}
 
-              {(inspector.zip_codes?.length ?? 0) > 0 ? (
-                <div className="rounded-xl border border-border bg-background/50 p-3">
-                  <div className="text-xs text-mutedForeground">Neighborhoods (ZIPs)</div>
-                  <div className="mt-1 text-sm font-medium">{inspector.zip_codes!.join(', ')}</div>
-                </div>
-              ) : null}
+              <div className="rounded-xl border border-border bg-background/50 p-3">
+                <div className="text-xs text-mutedForeground">Houses available</div>
+                <div className="mt-1 text-sm font-medium">{fmtNumber(inspector.summary.house_count)}</div>
+              </div>
 
               {(() => {
                 const d = inspector.drive_to_destination;
