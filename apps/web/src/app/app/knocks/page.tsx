@@ -232,7 +232,7 @@ export default function KnocksPage() {
               )}
               <div className="flex gap-1">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -243,7 +243,7 @@ export default function KnocksPage() {
                   Page {page} of {totalPages}
                 </span>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
