@@ -10,7 +10,7 @@ export const LoginSchema = z.object({
 
 export const InviteCreateSchema = z.object({
   email: z.string().email(),
-  role: RoleSchema.refine((r) => r === 'admin' || r === 'manager', { message: 'invite role must be admin/manager' })
+  role: RoleSchema
 });
 
 export const InviteAcceptSchema = z.object({

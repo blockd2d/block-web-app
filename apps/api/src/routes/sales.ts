@@ -398,6 +398,39 @@ export async function salesRoutes(app: FastifyInstance) {
   });
 
   /**
+   * DELETE /v1/sales/:id
+   * Delete a sale and its dependents (attachments, contract, jobs).
+   */
+  app.delete('/:id', async (req, reply) => {
+    const ctx = requireAnyAuthed(req);
+    const { id } = req.params as any;
+    const service = createServiceClient();
+
+    if (ctx.role === 'rep') {
+      const access = await assertSaleAccess(service, ctx, id);
+      if (!access.ok) return reply.code(403).send({ error: access.error });
+    }
+    if (ctx.role === 'labor') return reply.code(403).send({ error: 'Forbidden' });
+
+    const { data: sale } = await service
+      .from('sales')
+      .select('id')
+      .eq('id', id)
+      .eq('org_id', ctx.org_id)
+      .maybeSingle();
+    if (!sale) return reply.code(404).send({ error: 'Not found' });
+
+    await service.from('sale_attachments').delete().eq('org_id', ctx.org_id).eq('sale_id', id);
+    await service.from('contracts').delete().eq('org_id', ctx.org_id).eq('sale_id', id);
+    await service.from('jobs').delete().eq('org_id', ctx.org_id).eq('sale_id', id);
+    const { error } = await service.from('sales').delete().eq('id', id).eq('org_id', ctx.org_id);
+    if (error) return reply.code(400).send({ error: error.message });
+
+    await audit(ctx.org_id, ctx.profile_id, 'sale.deleted', { type: 'sale', id }, {});
+    return reply.send({ ok: true });
+  });
+
+  /**
    * POST /v1/sales/:id/attachments
    * Returns a signed upload URL for Supabase Storage.
    */

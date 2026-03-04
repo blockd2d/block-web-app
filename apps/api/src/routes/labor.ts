@@ -252,6 +252,37 @@ export async function laborRoutes(app: FastifyInstance) {
     return reply.send({ laborers: data });
   });
 
+  app.post('/laborers', async (req, reply) => {
+    const ctx = requireManager(req);
+    const body: any = req.body || {};
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!name) return reply.code(400).send({ error: 'name required' });
+    const service = createServiceClient();
+    const { data, error } = await service
+      .from('laborers')
+      .insert({
+        org_id: ctx.org_id,
+        name,
+        active: body.active !== false,
+        profile_id: null
+      })
+      .select('*')
+      .single();
+    if (error) return reply.code(400).send({ error: error.message });
+    await audit(ctx.org_id, ctx.profile_id, 'laborer.created', { type: 'laborer', id: data.id }, { name: data.name });
+    return reply.send({ laborer: data });
+  });
+
+  app.delete('/laborers/:id', async (req, reply) => {
+    const ctx = requireManager(req);
+    const { id } = req.params as any;
+    const service = createServiceClient();
+    const { error } = await service.from('laborers').delete().eq('id', id).eq('org_id', ctx.org_id);
+    if (error) return reply.code(400).send({ error: error.message });
+    await audit(ctx.org_id, ctx.profile_id, 'laborer.deleted', { type: 'laborer', id }, {});
+    return reply.send({ ok: true });
+  });
+
   app.post('/jobs', async (req, reply) => {
     const ctx = requireManager(req);
     const body: any = req.body || {};

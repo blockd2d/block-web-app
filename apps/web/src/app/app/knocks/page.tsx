@@ -15,7 +15,7 @@ const OUTCOMES = [
   { value: 'do_not_knock', label: 'DNK' }
 ] as const;
 
-type Cluster = { id: string; cluster_set_id: string };
+type Cluster = { id: string; cluster_set_id: string; name?: string | null };
 type Property = { id: string; address1?: string | null; city?: string | null; state?: string | null; zip?: string | null };
 
 export default function KnocksPage() {
@@ -32,6 +32,10 @@ export default function KnocksPage() {
 
   const [clusterSetId, setClusterSetId] = React.useState<string | null>(null);
   const [clusterSets, setClusterSets] = React.useState<{ id: string; name: string }[]>([]);
+
+  type PageSize = 5 | 10 | 20;
+  const [pageSize, setPageSize] = React.useState<PageSize>(20);
+  const [page, setPage] = React.useState(1);
 
   React.useEffect(() => {
     (async () => {
@@ -75,17 +79,24 @@ export default function KnocksPage() {
   React.useEffect(() => {
     if (!selectedClusterId) {
       setProperties([]);
+      setPage(1);
       return;
     }
     (async () => {
       try {
         const r = await api.get(`/v1/properties/by-cluster/${selectedClusterId}`);
         setProperties((r.properties || []) as Property[]);
+        setPage(1);
       } catch {
         setProperties([]);
+        setPage(1);
       }
     })();
   }, [selectedClusterId]);
+
+  const totalPages = Math.max(1, Math.ceil(properties.length / pageSize));
+  const start = (page - 1) * pageSize;
+  const paginatedProperties = properties.slice(start, start + pageSize);
 
   async function logOutcome(propertyId: string, outcome: string) {
     setLogging(propertyId);
@@ -158,7 +169,9 @@ export default function KnocksPage() {
               >
                 <option value="">Select cluster</option>
                 {clusters.map((c) => (
-                  <option key={c.id} value={c.id}>{c.id.slice(0, 8)}…</option>
+                  <option key={c.id} value={c.id}>
+                    {(c.name && c.name.trim()) ? c.name.trim() : `Cluster ${c.id.slice(0, 8)}`}
+                  </option>
                 ))}
               </select>
             </div>
@@ -175,7 +188,9 @@ export default function KnocksPage() {
             onChange={(e) => setSelectedClusterId(e.target.value || null)}
           >
             {clusters.map((c) => (
-              <option key={c.id} value={c.id}>{c.id.slice(0, 8)}…</option>
+              <option key={c.id} value={c.id}>
+                {(c.name && c.name.trim()) ? c.name.trim() : `Cluster ${c.id.slice(0, 8)}`}
+              </option>
             ))}
           </select>
         </div>
@@ -195,30 +210,70 @@ export default function KnocksPage() {
         ) : properties.length === 0 && selectedClusterId ? (
           <p className="text-sm text-mutedForeground">No properties in this cluster.</p>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.slice(0, 100).map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-soft">
-                <div className="truncate text-sm font-medium">{fmtAddr(p)}</div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {OUTCOMES.map((o) => (
-                    <Button
-                      key={o.value}
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs"
-                      disabled={logging === p.id}
-                      onClick={() => logOutcome(p.id, o.value)}
-                    >
-                      {logging === p.id ? '…' : o.label}
-                    </Button>
-                  ))}
-                </div>
+          <>
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <span className="text-xs text-mutedForeground">Properties per page</span>
+              <select
+                className="rounded-xl border border-input bg-background px-3 py-1.5 text-sm"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value) as PageSize);
+                  setPage(1);
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+              {properties.length > 0 && (
+                <span className="text-xs text-mutedForeground">
+                  Showing {start + 1}–{Math.min(start + pageSize, properties.length)} of {properties.length} properties
+                </span>
+              )}
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="flex items-center px-2 text-sm text-mutedForeground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
-        {properties.length > 100 && (
-          <p className="mt-2 text-xs text-mutedForeground">Showing first 100 properties. Use the rep app for full list.</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {paginatedProperties.map((p) => (
+                <div key={p.id} className="rounded-xl border border-border bg-card p-3 shadow-soft">
+                  <div className="truncate text-sm font-medium">{fmtAddr(p)}</div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {OUTCOMES.map((o) => (
+                      <Button
+                        key={o.value}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        disabled={logging === p.id}
+                        onClick={() => logOutcome(p.id, o.value)}
+                      >
+                        {logging === p.id ? '…' : o.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -29,6 +29,23 @@ export async function invitesRoutes(app: FastifyInstance) {
     return reply.send({ invites: data || [] });
   });
 
+  app.delete('/:id', async (req, reply) => {
+    const ctx = requireRoles(req, ['admin']);
+    const { id } = req.params as { id: string };
+    const service = createServiceClient();
+    const { data: invite, error: fetchErr } = await service
+      .from('invites')
+      .select('id, org_id, accepted_at')
+      .eq('id', id)
+      .eq('org_id', ctx.org_id)
+      .maybeSingle();
+    if (fetchErr) return reply.code(400).send({ error: fetchErr.message });
+    if (!invite) return reply.code(404).send({ error: 'Not found' });
+    const { error: delErr } = await service.from('invites').delete().eq('id', id).eq('org_id', ctx.org_id);
+    if (delErr) return reply.code(400).send({ error: delErr.message });
+    return reply.send({ ok: true });
+  });
+
   app.post('/', async (req, reply) => {
     const ctx = requireRoles(req, ['admin']);
     const body = InviteCreateSchema.parse(req.body ?? {});
@@ -82,6 +99,24 @@ export async function invitesRoutes(app: FastifyInstance) {
       name: body.name,
       email: invite.email
     });
+
+    if (invite.role === 'rep') {
+      await service.from('reps').insert({
+        org_id: invite.org_id,
+        profile_id: created.user.id,
+        name: body.name,
+        home_lat: 0,
+        home_lng: 0,
+        active: true
+      });
+    } else if (invite.role === 'labor') {
+      await service.from('laborers').insert({
+        org_id: invite.org_id,
+        profile_id: created.user.id,
+        name: body.name,
+        active: true
+      });
+    }
 
     await service.from('invites').update({ accepted_at: new Date().toISOString() }).eq('id', invite.id);
 

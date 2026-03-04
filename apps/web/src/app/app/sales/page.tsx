@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
@@ -74,6 +75,7 @@ export default function SalesPage() {
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [qDebounced, setQDebounced] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setQDebounced(q), 250);
@@ -144,6 +146,23 @@ export default function SalesPage() {
   }, [queryString]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  async function handleDelete(e: React.MouseEvent, s: SaleRow) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Delete this sale? This cannot be undone.')) return;
+    setErr(null);
+    setDeletingId(s.id);
+    try {
+      await api(`/v1/sales/${s.id}`, { method: 'DELETE' });
+      setRows((prev) => prev.filter((r) => r.id !== s.id));
+      setTotal((t) => Math.max(0, t - 1));
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to delete sale');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="p-6">
@@ -291,13 +310,14 @@ export default function SalesPage() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-border bg-card shadow-soft">
-          <div className="grid grid-cols-[140px_1.2fr_1.4fr_180px_140px_140px] gap-3 border-b border-border px-4 py-3 text-xs font-semibold text-mutedForeground">
+          <div className="grid grid-cols-[140px_1.2fr_1.4fr_180px_140px_140px_80px] gap-3 border-b border-border px-4 py-3 text-xs font-semibold text-mutedForeground">
             <div>Date</div>
             <div>Customer</div>
             <div>Address</div>
             <div>Rep</div>
             <div>Status</div>
             <div className="text-right">Price</div>
+            <div className="text-right">Action</div>
           </div>
 
           <div className="divide-y divide-border">
@@ -306,21 +326,35 @@ export default function SalesPage() {
             ) : null}
 
             {rows.map((s) => (
-              <Link
+              <div
                 key={s.id}
-                href={`/app/sales/${s.id}`}
-                className="grid grid-cols-[140px_1.2fr_1.4fr_180px_140px_140px] gap-3 px-4 py-3 hover:bg-muted/40"
+                className="grid grid-cols-[140px_1.2fr_1.4fr_180px_140px_140px_80px] gap-3 px-4 py-3 hover:bg-muted/40 items-center"
               >
-                <div className="text-sm text-mutedForeground">{fmtDate(s.created_at)}</div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{s.customer_name || s.customer_phone || '—'}</div>
-                  <div className="truncate text-xs text-mutedForeground">{s.service_type || '—'}</div>
+                <Link href={`/app/sales/${s.id}`} className="contents">
+                  <div className="text-sm text-mutedForeground">{fmtDate(s.created_at)}</div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{s.customer_name || s.customer_phone || '—'}</div>
+                    <div className="truncate text-xs text-mutedForeground">{s.service_type || '—'}</div>
+                  </div>
+                  <div className="truncate text-sm text-mutedForeground">{fmtAddress(s)}</div>
+                  <div className="truncate text-sm text-mutedForeground">{s.rep_name || s.rep_id?.slice(0, 8) + '…'}</div>
+                  <div className="text-sm font-medium">{String(s.pipeline_status || s.sale_status || '—')}</div>
+                  <div className="text-right text-sm font-medium">{fmtCurrency(s.price)}</div>
+                </Link>
+                <div className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-mutedForeground hover:text-destructive"
+                    disabled={deletingId === s.id}
+                    onClick={(e) => handleDelete(e, s)}
+                    aria-label="Delete sale"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="truncate text-sm text-mutedForeground">{fmtAddress(s)}</div>
-                <div className="truncate text-sm text-mutedForeground">{s.rep_name || s.rep_id?.slice(0, 8) + '…'}</div>
-                <div className="text-sm font-medium">{String(s.pipeline_status || s.sale_status || '—')}</div>
-                <div className="text-right text-sm font-medium">{fmtCurrency(s.price)}</div>
-              </Link>
+              </div>
             ))}
 
             {!loading && rows.length === 0 ? (

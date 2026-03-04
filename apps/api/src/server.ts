@@ -25,6 +25,7 @@ import { analyticsRoutes } from './routes/analytics.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { auditRoutes } from './routes/audit.js';
 import { aliasRoutes } from './routes/aliases.js';
+import { orgRoutes } from './routes/org.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -104,6 +105,7 @@ export function buildServer() {
 
     app.register(authRoutes, { prefix: '/v1/auth' });
   app.register(invitesRoutes, { prefix: '/v1/invites' });
+  app.register(orgRoutes, { prefix: '/v1/org' });
   app.register(countiesRoutes, { prefix: '/v1/counties' });
   app.register(propertiesRoutes, { prefix: '/v1/properties' });
   app.register(repsRoutes, { prefix: '/v1/reps' });

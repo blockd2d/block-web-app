@@ -38,7 +38,11 @@ async function main() {
           .update({ status: 'complete', progress: 100, finished_at: new Date().toISOString(), result })
           .eq('id', job.id);
       } catch (err: any) {
-        console.error('Job failed', job.id, job.type, err);
+        console.error('Job failed', job.id, job.type, err?.message, err?.stack, {
+          details: err?.details,
+          hint: err?.hint,
+          code: err?.code
+        });
         const errMsg = err?.message || String(err);
         await service
           .from('jobs_queue')

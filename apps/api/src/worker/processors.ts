@@ -17,6 +17,15 @@ function pickColor(i: number) {
   return PALETTE[i % PALETTE.length];
 }
 
+function supabaseErrorMessage(err: any, prefix = ''): string {
+  const msg = err?.message || String(err);
+  const parts = [prefix, msg];
+  if (err?.details) parts.push(String(err.details));
+  if (err?.hint) parts.push(String(err.hint));
+  if (err?.code) parts.push(`code: ${err.code}`);
+  return parts.filter(Boolean).join('; ');
+}
+
 async function updateClusterSet(client: SupabaseClient, org_id: string, cluster_set_id: string, patch: any) {
   await client.from('cluster_sets').update(patch).eq('org_id', org_id).eq('id', cluster_set_id);
 }
@@ -167,7 +176,7 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
 
   const { data, error } = await q;
   let props = (data as any[]) || null;
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(supabaseErrorMessage(error, 'properties select'));
 
   if ((exclude_dnk || only_unworked) && (props || []).length) {
     // Optional property filters based on interaction history
@@ -182,7 +191,7 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
         .select('property_id,outcome')
         .eq('org_id', org_id)
         .in('property_id', chunk);
-      if (ie) throw new Error(ie.message);
+      if (ie) throw new Error(supabaseErrorMessage(ie, 'interactions select'));
       for (const row of inter || []) {
         worked.add((row as any).property_id);
         const o = String((row as any).outcome || '').toLowerCase();
@@ -206,7 +215,8 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
   });
 
   // Clear existing clusters for this set
-  await client.from('clusters').delete().eq('org_id', org_id).eq('cluster_set_id', cluster_set_id);
+  const { error: delErr } = await client.from('clusters').delete().eq('org_id', org_id).eq('cluster_set_id', cluster_set_id);
+  if (delErr) throw new Error(supabaseErrorMessage(delErr, 'clusters delete'));
   // Insert clusters in batches
   const insertedClusterIds: string[] = [];
   for (let i = 0; i < clusters.length; i++) {
@@ -231,14 +241,15 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
       color: pickColor(i)
     };
     const { data: inserted, error: iErr } = await client.from('clusters').insert(row).select('id').single();
-    if (iErr) throw new Error(iErr.message);
+    if (iErr) throw new Error(supabaseErrorMessage(iErr, `cluster insert at index ${i}: `));
     insertedClusterIds.push(inserted!.id);
 
     // mapping
     const pairs = c.memberPropertyIds.map((pid) => ({ org_id, cluster_id: inserted!.id, property_id: pid }));
     // Supabase has max payload size; batch 1000
     for (let j = 0; j < pairs.length; j += 1000) {
-      await client.from('cluster_properties').insert(pairs.slice(j, j + 1000));
+      const { error: cpErr } = await client.from('cluster_properties').insert(pairs.slice(j, j + 1000));
+      if (cpErr) throw new Error(supabaseErrorMessage(cpErr, `cluster_properties insert cluster index ${i} batch ${j}: `));
     }
 
     if (i % 5 === 0) {

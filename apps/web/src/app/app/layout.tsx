@@ -15,10 +15,47 @@ const PosthogInit = dynamic(
   { ssr: false }
 );
 
+function pageTitleFromPath(pathname: string | null): string {
+  if (!pathname || !pathname.startsWith('/app')) return 'Block';
+  const path = pathname.replace(/^\/app\/?/, '') || 'dashboard';
+  const segment = path.split('/')[0];
+  const map: Record<string, string> = {
+    dashboard: 'Dashboard',
+    leads: 'Leads',
+    sales: 'Sales',
+    quotes: 'Quotes',
+    territories: 'Territories',
+    knocks: 'Knocks',
+    crews: 'Crews',
+    settings: 'Settings',
+    reps: 'Reps',
+    messages: 'Messages',
+    exports: 'Exports',
+    analytics: 'Analytics',
+    assignments: 'Assignments',
+    followups: 'Follow-ups',
+    operations: 'Operations',
+    audit: 'Audit',
+    invoices: 'Invoices',
+    schedule: 'Schedule',
+    zones: 'Zones'
+  };
+  if (path === 'leads/new') return 'New lead';
+  if (path === 'leads/map') return 'Lead map';
+  if (path === 'quotes/new') return 'New quote';
+  if (segment === 'sales' && path !== 'sales') return 'Sale';
+  if (segment === 'territories' && path !== 'territories' && path !== 'territories/zones') return 'Territory';
+  return map[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+}
+
 function ProtectedShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { me, loading, error, refresh } = useMe();
+
+  React.useEffect(() => {
+    document.title = 'Block - ' + pageTitleFromPath(pathname);
+  }, [pathname]);
 
   React.useEffect(() => {
     if (loading) return;
