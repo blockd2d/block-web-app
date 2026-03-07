@@ -94,6 +94,16 @@ async function main() {
   });
   if (settingsErr) throw settingsErr;
 
+  // Default county: Hendricks (so org can create cluster sets and import properties for this county).
+  // To get properties in cluster generation or draw zones, run: ORG_ID=<org.id> pnpm run import:hendricks
+  const { data: county, error: countyErr } = await sb
+    .from('counties')
+    .insert({ org_id: org.id, name: 'Hendricks', state: 'IN' })
+    .select('id')
+    .single();
+  if (countyErr) throw countyErr;
+  console.log('County: Hendricks (IN) created for org');
+
   // One Auth user per unique email (reuse if email already exists)
   const emails = [adminEmail, managerEmail, repEmail, laborEmail];
   const roles = ['admin', 'manager', 'rep', 'labor'] as const;
@@ -146,6 +156,7 @@ async function main() {
 
   console.log('\n--- Client created ---');
   console.log('Org:', orgName, '(' + org.id + ')');
+  console.log('County: Hendricks (IN) – id', county.id);
   console.log('Password (all accounts):', passwordInput ? '(as entered)' : DEFAULT_PASSWORD + ' (default)');
   console.log('Admin:', adminEmail);
   console.log('Manager:', managerEmail);

@@ -48,6 +48,23 @@ type Suggestion = {
   score?: number;
 };
 
+type ClusterSetDetails = {
+  name?: string | null;
+  county_id?: string | null;
+  radius_m?: number | null;
+  min_houses?: number | null;
+  filters_json?: {
+    radius_m?: number;
+    min_houses?: number;
+    value_min?: number | null;
+    value_max?: number | null;
+    exclude_dnk?: boolean;
+    only_unworked?: boolean;
+  } | null;
+} | null;
+
+type County = { id: string; name: string };
+
 function repName(reps: Rep[], id: string | null) {
   return reps.find((r) => r.id === id)?.name ?? 'Unassigned';
 }
@@ -74,6 +91,8 @@ export default function TerritoryDetailPage() {
   const [centerOnClusterId, setCenterOnClusterId] = React.useState<string | null>(null);
   const [clusterSetName, setClusterSetName] = React.useState<string | null>(null);
   const [clusterSetCountyId, setClusterSetCountyId] = React.useState<string | null>(null);
+  const [clusterSetDetails, setClusterSetDetails] = React.useState<ClusterSetDetails>(null);
+  const [counties, setCounties] = React.useState<County[]>([]);
   const [showNoPropertiesModal, setShowNoPropertiesModal] = React.useState(false);
   const [editingClusterSetName, setEditingClusterSetName] = React.useState(false);
   const [clusterSetNameDraft, setClusterSetNameDraft] = React.useState('');
@@ -85,15 +104,21 @@ export default function TerritoryDetailPage() {
   const selectedCluster = clusters.find((c) => c.id === selectedClusterId) ?? null;
 
   React.useEffect(() => {
-    api.get(`/v1/cluster-sets/${clusterSetId}`)
-      .then((r: any) => {
+    Promise.all([
+      api.get(`/v1/cluster-sets/${clusterSetId}`),
+      api.get('/v1/counties').catch(() => ({ items: [] }))
+    ])
+      .then(([r, countiesRes]: [any, any]) => {
         const set = r.cluster_set;
         setClusterSetName(set?.name ?? null);
         setClusterSetCountyId(set?.county_id ?? null);
+        setClusterSetDetails(set ?? null);
+        setCounties(countiesRes?.items ?? []);
       })
       .catch(() => {
         setClusterSetName(null);
         setClusterSetCountyId(null);
+        setClusterSetDetails(null);
       });
   }, [clusterSetId]);
 
@@ -101,7 +126,10 @@ export default function TerritoryDetailPage() {
     setLoading(true);
     setNotice(null);
     try {
-      const [r1, r2] = await Promise.all([api.get('/v1/reps'), api.get(`/v1/clusters?cluster_set_id=${clusterSetId}`)]);
+      const [r1, r2] = await Promise.all([
+        api.get('/v1/reps'),
+        api.get(`/v1/clusters?cluster_set_id=${clusterSetId}&limit=5000`)
+      ]);
       setReps(r1.items ?? []);
       setClusters(r2.items ?? []);
     } catch (e: any) {
@@ -340,6 +368,46 @@ export default function TerritoryDetailPage() {
 
       {notice ? (
         <div className="mt-4 rounded-xl border border-border bg-card p-3 text-sm text-foreground">{notice}</div>
+      ) : null}
+
+      {clusterSetDetails ? (
+        <div className="mt-4 rounded-xl border border-border bg-card p-3">
+          <div className="text-xs font-medium text-mutedForeground mb-2">Search criteria</div>
+          {clusterSetDetails.county_id == null ? (
+            <p className="text-sm text-mutedForeground">Drawn zones — not created from search filters.</p>
+          ) : (
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-mutedForeground">County</dt>
+                <dd>{counties.find((c) => c.id === clusterSetDetails.county_id)?.name ?? clusterSetDetails.county_id ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Radius (m)</dt>
+                <dd>{clusterSetDetails.radius_m ?? clusterSetDetails.filters_json?.radius_m ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Min houses</dt>
+                <dd>{clusterSetDetails.min_houses ?? clusterSetDetails.filters_json?.min_houses ?? '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Value min</dt>
+                <dd>{clusterSetDetails.filters_json?.value_min != null ? fmtNumber(clusterSetDetails.filters_json.value_min) : 'Any'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Value max</dt>
+                <dd>{clusterSetDetails.filters_json?.value_max != null ? fmtNumber(clusterSetDetails.filters_json.value_max) : 'Any'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Exclude DNK</dt>
+                <dd>{clusterSetDetails.filters_json?.exclude_dnk ? 'Yes' : 'No'}</dd>
+              </div>
+              <div>
+                <dt className="text-mutedForeground">Only unworked</dt>
+                <dd>{clusterSetDetails.filters_json?.only_unworked ? 'Yes' : 'No'}</dd>
+              </div>
+            </dl>
+          )}
+        </div>
       ) : null}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">

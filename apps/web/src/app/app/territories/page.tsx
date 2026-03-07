@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { X, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { Input } from '../../../ui/input';
 import { Button } from '../../../ui/button';
-import { api } from '../../../lib/api';
+import { api, ApiError } from '../../../lib/api';
 
 type ClusterSet = {
   id: string;
@@ -32,6 +32,7 @@ export default function TerritoriesPage() {
   const [excludeDNK, setExcludeDNK] = React.useState(true);
   const [onlyUnworked, setOnlyUnworked] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [validationModal, setValidationModal] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<ClusterSet | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
@@ -134,6 +135,7 @@ export default function TerritoriesPage() {
   async function createClusterSet() {
     setCreating(true);
     setError(null);
+    setValidationModal(null);
     try {
       const payload = {
         name,
@@ -152,7 +154,21 @@ export default function TerritoriesPage() {
       pollingStartedAtRef.current = Date.now();
       setPollingActive(true);
     } catch (e: any) {
-      setError(e?.message || 'Failed to create cluster set');
+      if (e instanceof ApiError && e.status === 400 && e.data?.details && Array.isArray(e.data.details)) {
+        const issues = e.data.details as { path?: string[]; code?: string; minimum?: number; message?: string }[];
+        const radiusIssue = issues.find((i) => i.path?.join('.') === 'filters.radius_m' || i.path?.includes('radius_m'));
+        if (radiusIssue && (radiusIssue.code === 'too_small' || radiusIssue.message?.includes('50'))) {
+          const minVal = radiusIssue.minimum ?? 50;
+          setValidationModal(`Cluster radius must be at least ${minVal}m.`);
+          return;
+        }
+      }
+      const fallback = e?.data?.error || e?.message || 'Failed to create cluster set';
+      if (typeof fallback === 'string' && fallback.length < 200) {
+        setValidationModal(fallback);
+      } else {
+        setValidationModal('Validation failed. Check your settings (e.g. radius ≥ 50m, min houses).');
+      }
     } finally {
       setCreating(false);
     }
@@ -227,6 +243,18 @@ export default function TerritoriesPage() {
 
             {error ? <div className="mt-3 text-sm text-destructive">{error}</div> : null}
 
+            {validationModal ? (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="validation-dialog-title">
+                <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-4 shadow-soft">
+                  <h2 id="validation-dialog-title" className="text-sm font-semibold">Couldn&apos;t create cluster set</h2>
+                  <p className="mt-2 text-sm text-mutedForeground">{validationModal}</p>
+                  <div className="mt-6 flex justify-end">
+                    <Button variant="primary" onClick={() => setValidationModal(null)}>Dismiss</Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-4 flex items-center justify-end">
               <Button onClick={createClusterSet} disabled={creating || !countyId}>
                 {creating ? 'Creating…' : 'Create'}
@@ -255,6 +283,7 @@ export default function TerritoriesPage() {
                 </summary>
                 <div className="mt-2 text-sm text-mutedForeground space-y-2 pl-2">
                   <p>Use radius and min houses together: larger radius + higher min houses for fewer, denser territories; smaller radius for more, tighter clusters.</p>
+                  <p>To get more clusters (e.g. 20–50) to choose from, use a <strong>smaller radius</strong> (e.g. 80–120 m) and <strong>lower min houses</strong> (e.g. 5–12). Larger radius and higher min houses produce fewer, larger clusters.</p>
                   <p>Narrow value range to focus on a specific segment (e.g. mid-tier homes).</p>
                   <p>Use &quot;Only unworked&quot; when building fresh routes; use &quot;Exclude DNK&quot; to respect resident preferences.</p>
                 </div>
