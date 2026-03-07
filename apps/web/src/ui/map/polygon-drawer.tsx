@@ -69,19 +69,8 @@ export function PolygonDrawer({
     mapRef.current = map;
     return () => {
       mapRef.current = null;
-      const m = map;
-      const isAbort = (e: any) => e?.name === 'AbortError' || e?.code === 20;
-      const onUnhandled = (ev: PromiseRejectionEvent) => {
-        if (isAbort(ev?.reason)) {
-          ev.preventDefault();
-          window.removeEventListener('unhandledrejection', onUnhandled);
-        }
-      };
-      window.addEventListener('unhandledrejection', onUnhandled);
-      setTimeout(() => window.removeEventListener('unhandledrejection', onUnhandled), 500);
-      try {
-        m.remove();
-      } catch (_e) {}
+      // Do not call map.remove(): Mapbox v3 can throw AbortError (sync or async) that surfaces
+      // as unhandled. React will remove the container on unmount; the map is then GC'd.
     };
   }, [token]);
 

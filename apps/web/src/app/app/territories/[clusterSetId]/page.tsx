@@ -322,7 +322,7 @@ export default function TerritoryDetailPage() {
             <div className="text-sm font-medium">Territory Map</div>
             <div className="text-xs text-mutedForeground">Click a cluster to inspect</div>
           </div>
-          <div className="relative w-full min-h-[280px] aspect-video">
+          <div className="relative min-h-[280px] flex-1 w-full overflow-hidden rounded-xl">
             <div className="absolute inset-0">
               <OpsMap
                 clusterSetId={clusterSetId}

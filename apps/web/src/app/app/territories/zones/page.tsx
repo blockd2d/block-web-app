@@ -24,7 +24,7 @@ export default function DrawZonesPage() {
           </div>
           <h1 className="mt-2 text-2xl font-semibold">Draw zone</h1>
           <p className="mt-1 text-sm text-mutedForeground">
-            Click the map to add points. Close the polygon, then Save. Requires backend <code className="rounded bg-muted px-1">/v1/zones</code> for persist.
+            Click the map to add points. Close the polygon, then Save.
           </p>
         </div>
         <Link href="/app/territories">

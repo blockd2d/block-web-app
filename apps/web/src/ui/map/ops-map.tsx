@@ -137,6 +137,9 @@ export function OpsMap({
     map.on('load', () => {
       loadedMapRef.current = map;
       setMapStyleLoaded(true);
+      // Resize so the map canvas fills the container (avoids grey border / dead space)
+      requestAnimationFrame(() => map.resize());
+      setTimeout(() => map.resize(), 100);
       map.addSource('clusters-polygons', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('clusters-centers', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('rep-locations', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
@@ -252,7 +255,14 @@ export function OpsMap({
 
     mapRef.current = map;
 
+    const container = containerRef.current;
+    const ro = new ResizeObserver(() => {
+      map.resize();
+    });
+    if (container) ro.observe(container);
+
     return () => {
+      ro.disconnect();
       mapRef.current = null;
       loadedMapRef.current = null;
       setMapStyleLoaded(false);
@@ -426,7 +436,11 @@ export function OpsMap({
       const bbox = `${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`;
 
       try {
-        abort?.abort();
+        try {
+          abort?.abort();
+        } catch (_) {
+          // AbortController.abort() can throw in some environments; ignore
+        }
         abort = new AbortController();
 
         const all: PropertyRow[] = [];
@@ -479,7 +493,11 @@ export function OpsMap({
     fetchProperties();
 
     return () => {
-      abort?.abort();
+      try {
+        abort?.abort();
+      } catch (_) {
+        // Ignore abort errors on cleanup
+      }
       map.off('moveend', handler);
       map.off('zoomend', handler);
     };
