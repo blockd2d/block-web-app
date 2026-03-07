@@ -53,6 +53,7 @@ export function OpsMap({
   selectedClusterId,
   onSelectCluster,
   enablePropertyPoints = true,
+  clusterProperties = null,
   className,
   centerOnClusterId = null,
   onCenterRequestedFulfilled
@@ -61,6 +62,8 @@ export function OpsMap({
   selectedClusterId: string | null;
   onSelectCluster: (id: string) => void;
   enablePropertyPoints?: boolean;
+  /** When set (e.g. from territory inspector), show a circle on each property. */
+  clusterProperties?: { id: string; lat: number; lng: number }[] | null;
   className?: string;
   centerOnClusterId?: string | null;
   onCenterRequestedFulfilled?: () => void;
@@ -144,6 +147,7 @@ export function OpsMap({
       map.addSource('clusters-centers', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('rep-locations', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
       map.addSource('properties', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
+      map.addSource('cluster-properties', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } as any });
 
       map.addLayer({
         id: 'clusters-fill',
@@ -195,6 +199,19 @@ export function OpsMap({
       if (!enablePropertyPoints) {
         map.setLayoutProperty('properties-points', 'visibility', 'none');
       }
+
+      map.addLayer({
+        id: 'cluster-properties-circles',
+        type: 'circle',
+        source: 'cluster-properties',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': 'hsl(var(--foreground) / 0.8)',
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': 'hsl(var(--background))'
+        }
+      });
 
       // Rep locations
       map.addLayer({
@@ -341,6 +358,24 @@ export function OpsMap({
       if (!b.isEmpty()) map.fitBounds(b, { padding: 70, duration: 450, maxZoom: 14 });
     }
   }, [clusters, reps, selectedClusterId, enablePropertyPoints, mapStyleLoaded]);
+
+  // Show property circles when inspecting a cluster (clusterProperties from parent)
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapStyleLoaded) return;
+    const src = map.getSource('cluster-properties') as mapboxgl.GeoJSONSource | undefined;
+    if (!src) return;
+    if (!clusterProperties || clusterProperties.length === 0) {
+      src.setData({ type: 'FeatureCollection', features: [] } as any);
+      return;
+    }
+    const features = clusterProperties.map((p) => ({
+      type: 'Feature' as const,
+      properties: { id: p.id },
+      geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] }
+    }));
+    src.setData({ type: 'FeatureCollection', features } as any);
+  }, [clusterProperties, mapStyleLoaded]);
 
   // Center map on a specific cluster when requested (e.g. from Assignment Table row click)
   React.useEffect(() => {

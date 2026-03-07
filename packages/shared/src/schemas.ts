@@ -31,7 +31,7 @@ export const ClusterSetCreateSchema = z.object({
   name: z.string().min(1).optional(),
   county_id: z.string().uuid(),
   filters: z.object({
-    radius_m: z.number().min(50).max(5000).default(500),
+    radius_m: z.number().min(10).max(5000).default(500),
     min_houses: z.number().min(3).max(500).default(12),
     value_min: z.number().optional(),
     value_max: z.number().optional(),

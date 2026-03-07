@@ -67,6 +67,21 @@ export function PolygonDrawer({
         source: 'draw-polygon',
         paint: { 'line-color': '#3b82f6', 'line-width': 2 }
       });
+      map.addSource('draw-points', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+      map.addLayer({
+        id: 'draw-points-circles',
+        type: 'circle',
+        source: 'draw-points',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#3b82f6',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#1d4ed8'
+        }
+      });
       setMapReady(true);
     });
     mapRef.current = map;
@@ -88,6 +103,26 @@ export function PolygonDrawer({
       src.setData({ type: 'FeatureCollection', features: [] });
     }
   }, [polygonFeature, mapReady]);
+
+  const pointsFeatures = React.useMemo(
+    () => ({
+      type: 'FeatureCollection' as const,
+      features: points.map(([lng, lat]) => ({
+        type: 'Feature' as const,
+        properties: {},
+        geometry: { type: 'Point' as const, coordinates: [lng, lat] }
+      }))
+    }),
+    [points]
+  );
+
+  useEffect(() => {
+    if (!mapReady) return;
+    const map = mapRef.current;
+    const src = map?.getSource('draw-points') as mapboxgl.GeoJSONSource | undefined;
+    if (!src) return;
+    src.setData(pointsFeatures);
+  }, [pointsFeatures, mapReady]);
 
   const handleMapClick = useCallback(
     (e: mapboxgl.MapMouseEvent) => {

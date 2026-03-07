@@ -64,6 +64,7 @@ export default function TerritoryDetailPage() {
   const [selectedClusterId, setSelectedClusterId] = React.useState<string | null>(null);
   const [seededFromQuery, setSeededFromQuery] = React.useState(false);
   const [inspector, setInspector] = React.useState<Inspector | null>(null);
+  const [clusterProperties, setClusterProperties] = React.useState<{ id: string; lat: number; lng: number }[] | null>(null);
 
   const [bulkIds, setBulkIds] = React.useState<Record<string, boolean>>({});
   const [assignRepId, setAssignRepId] = React.useState<string>('');
@@ -72,6 +73,8 @@ export default function TerritoryDetailPage() {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [centerOnClusterId, setCenterOnClusterId] = React.useState<string | null>(null);
   const [clusterSetName, setClusterSetName] = React.useState<string | null>(null);
+  const [clusterSetCountyId, setClusterSetCountyId] = React.useState<string | null>(null);
+  const [showNoPropertiesModal, setShowNoPropertiesModal] = React.useState(false);
   const [editingClusterSetName, setEditingClusterSetName] = React.useState(false);
   const [clusterSetNameDraft, setClusterSetNameDraft] = React.useState('');
   const [savingClusterSetName, setSavingClusterSetName] = React.useState(false);
@@ -83,8 +86,15 @@ export default function TerritoryDetailPage() {
 
   React.useEffect(() => {
     api.get(`/v1/cluster-sets/${clusterSetId}`)
-      .then((r: any) => setClusterSetName(r.cluster_set?.name ?? null))
-      .catch(() => setClusterSetName(null));
+      .then((r: any) => {
+        const set = r.cluster_set;
+        setClusterSetName(set?.name ?? null);
+        setClusterSetCountyId(set?.county_id ?? null);
+      })
+      .catch(() => {
+        setClusterSetName(null);
+        setClusterSetCountyId(null);
+      });
   }, [clusterSetId]);
 
   const loadAll = React.useCallback(async () => {
@@ -105,6 +115,15 @@ export default function TerritoryDetailPage() {
     loadAll();
   }, [loadAll]);
 
+  // Show "No properties found" modal when worker-generated cluster set has no properties
+  React.useEffect(() => {
+    if (loading) return;
+    if (!clusterSetCountyId) return; // draw-zone sets have null county_id
+    const noProperties =
+      clusters.length === 0 || clusters.every((c) => (c.stats_json?.size ?? 0) === 0);
+    if (noProperties) setShowNoPropertiesModal(true);
+  }, [loading, clusterSetCountyId, clusters]);
+
   // Deep-link support (Dashboard cluster card → Territory inspector)
   React.useEffect(() => {
     if (seededFromQuery) return;
@@ -116,15 +135,22 @@ export default function TerritoryDetailPage() {
   React.useEffect(() => {
     if (!selectedClusterId) {
       setInspector(null);
+      setClusterProperties(null);
       return;
     }
     setNotice(null);
     (async () => {
       try {
-        const res = await api.get(`/v1/clusters/${selectedClusterId}/inspector`);
+        const [res, propsRes] = await Promise.all([
+          api.get(`/v1/clusters/${selectedClusterId}/inspector`),
+          api.get(`/v1/clusters/${selectedClusterId}/properties`)
+        ]);
         setInspector(res);
+        const list = (propsRes as any)?.properties ?? [];
+        setClusterProperties(list.map((p: any) => ({ id: p.id, lat: Number(p.lat), lng: Number(p.lng) })));
       } catch (e: any) {
         setInspector(null);
+        setClusterProperties(null);
         setNotice(e?.message ?? 'Failed to load cluster details');
       }
     })();
@@ -329,6 +355,7 @@ export default function TerritoryDetailPage() {
                 selectedClusterId={selectedClusterId}
                 onSelectCluster={setSelectedClusterId}
                 enablePropertyPoints={false}
+                clusterProperties={clusterProperties}
                 className="h-full w-full"
                 centerOnClusterId={centerOnClusterId}
                 onCenterRequestedFulfilled={() => setCenterOnClusterId(null)}
@@ -571,6 +598,22 @@ export default function TerritoryDetailPage() {
           <div className="mt-4 text-sm text-mutedForeground">No clusters in this set yet.</div>
         ) : null}
       </div>
+
+      {showNoPropertiesModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="no-properties-dialog-title">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <h2 id="no-properties-dialog-title" className="text-sm font-semibold">No properties found</h2>
+            <p className="mt-2 text-sm text-mutedForeground">
+              No properties found matching preferences. Try again with different metrics.
+            </p>
+            <div className="mt-6 flex justify-end">
+              <Button variant="primary" onClick={() => setShowNoPropertiesModal(false)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

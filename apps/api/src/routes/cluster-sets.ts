@@ -21,7 +21,13 @@ export async function clusterSetsRoutes(app: FastifyInstance) {
 
   app.post('/', async (req, reply) => {
     const ctx = requireManager(req);
-    const body = ClusterSetCreateSchema.parse(req.body ?? {});
+    let body: { name?: string; county_id: string; filters: { radius_m: number; min_houses: number; value_min?: number; value_max?: number; exclude_dnk?: boolean; only_unworked?: boolean } };
+    try {
+      body = ClusterSetCreateSchema.parse(req.body ?? {}) as any;
+    } catch (err: any) {
+      const msg = err?.message ?? 'Validation failed';
+      return reply.code(400).send({ error: msg, details: (err as any)?.issues ?? undefined });
+    }
     const service = createServiceClient();
     const { data: set, error } = await service
       .from('cluster_sets')
