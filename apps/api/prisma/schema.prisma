@@ -39,7 +39,7 @@ model cluster_properties {
 model cluster_sets {
   id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   org_id        String        @db.Uuid
-  county_id     String        @db.Uuid
+  county_id     String?       @db.Uuid
   filters_json  Json
   status        String        @default("queued")
   progress      Int           @default(0)
@@ -49,7 +49,7 @@ model cluster_sets {
   name          String        @default("Cluster Set")
   radius_m      Int?
   min_houses    Int?
-  counties      counties      @relation(fields: [county_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  counties      counties?     @relation(fields: [county_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   profiles      profiles?     @relation(fields: [created_by], references: [id], onUpdate: NoAction)
   organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   clusters      clusters[]
