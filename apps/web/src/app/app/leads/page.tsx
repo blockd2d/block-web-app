@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { api, ApiError } from '../../../lib/api';
 import { Button } from '../../../ui/button';
 import { fmtCurrency } from '../../../lib/format';
@@ -40,7 +40,9 @@ export default function LeadsPage() {
   const [rows, setRows] = React.useState<LeadRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState<string | null>(null);
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<LeadRow | null>(null);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setErr(null);
@@ -59,25 +61,24 @@ export default function LeadsPage() {
     load();
   }, [load]);
 
-  async function handleDelete(e: React.MouseEvent, s: LeadRow) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirm(`Delete this lead? This cannot be undone.`)) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
     setErr(null);
-    setDeletingId(s.id);
     try {
-      await api(`/v1/sales/${s.id}`, { method: 'DELETE' });
-      setRows((prev) => prev.filter((r) => r.id !== s.id));
-      setErr(null);
+      await api(`/v1/sales/${deleteTarget.id}`, { method: 'DELETE' });
+      setRows((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: any) {
       if (e instanceof ApiError && e.status === 404) {
-        setRows((prev) => prev.filter((r) => r.id !== s.id));
-        setErr(null);
+        setRows((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+        setDeleteTarget(null);
       } else {
-        setErr(e?.message || 'Failed to delete lead');
+        setDeleteError(e?.message || 'Failed to delete lead');
       }
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   }
 
@@ -141,8 +142,13 @@ export default function LeadsPage() {
                   variant="ghost"
                   size="sm"
                   className="text-mutedForeground hover:text-destructive"
-                  disabled={deletingId === s.id}
-                  onClick={(e) => handleDelete(e, s)}
+                  disabled={deleting && deleteTarget?.id === s.id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteTarget(s);
+                    setDeleteError(null);
+                  }}
                   aria-label="Delete lead"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -155,6 +161,36 @@ export default function LeadsPage() {
           ) : null}
         </div>
       </div>
+
+      {deleteTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="delete-lead-dialog-title">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-4 shadow-soft">
+            <div className="flex items-start justify-between gap-2">
+              <h2 id="delete-lead-dialog-title" className="text-sm font-semibold">Delete lead</h2>
+              <button
+                type="button"
+                onClick={() => { setDeleteTarget(null); setDeleteError(null); }}
+                className="rounded-lg p-1 text-mutedForeground hover:bg-muted hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-mutedForeground">
+              This action cannot be undone. The lead for {deleteTarget.customer_name || deleteTarget.customer_phone || 'this customer'} will be permanently removed.
+            </p>
+            {deleteError ? <div className="mt-3 text-sm text-destructive">{deleteError}</div> : null}
+            <div className="mt-6 flex justify-end gap-2">
+              <Button onClick={() => { setDeleteTarget(null); setDeleteError(null); }} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button variant="ghost" onClick={confirmDelete} disabled={deleting} className="border-destructive/50 text-destructive hover:bg-destructive/10">
+                {deleting ? 'Deleting…' : 'Proceed'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

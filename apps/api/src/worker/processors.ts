@@ -13,6 +13,9 @@ const PALETTE = [
   '#16A085','#27AE60','#2980B9','#8E44AD','#2C3E50','#C0392B','#D35400'
 ];
 
+/** Chunk size for interactions .in(property_id) queries; kept small to stay under PostgREST URL length limits. */
+const INTERACTIONS_CHUNK_SIZE = 200;
+
 function pickColor(i: number) {
   return PALETTE[i % PALETTE.length];
 }
@@ -184,8 +187,8 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
     const worked = new Set<string>();
     const dnk = new Set<string>();
     // Chunked IN queries to avoid URL limits
-    for (let i = 0; i < propIds.length; i += 5000) {
-      const chunk = propIds.slice(i, i + 5000);
+    for (let i = 0; i < propIds.length; i += INTERACTIONS_CHUNK_SIZE) {
+      const chunk = propIds.slice(i, i + INTERACTIONS_CHUNK_SIZE);
       const { data: inter, error: ie } = await client
         .from('interactions')
         .select('property_id,outcome')
