@@ -213,8 +213,9 @@ async function processClusterGenerate(client: SupabaseClient, job: any) {
 
   const clusters = dbscanCluster(points, radius_m, min_houses, (p) => {
     const pct = Math.max(10, Math.min(85, Math.floor(10 + p * 75)));
-    client.from('cluster_sets').update({ progress: pct }).eq('id', cluster_set_id).eq('org_id', org_id).catch(() => {});
-    client.from('jobs_queue').update({ progress: pct }).eq('id', job.id).catch(() => {});
+    // Supabase builder is thenable but not a full Promise; use .then(_, onRej) instead of .catch()
+    client.from('cluster_sets').update({ progress: pct }).eq('id', cluster_set_id).eq('org_id', org_id).then(() => {}, () => {});
+    client.from('jobs_queue').update({ progress: pct }).eq('id', job.id).then(() => {}, () => {});
   });
 
   // Clear existing clusters for this set
