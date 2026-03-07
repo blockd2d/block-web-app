@@ -22,6 +22,8 @@
   },
   "dependencies": {
   "@blockd2d/shared": "^0.1.2",
+    "@turf/bbox": "^7.3.4",
+    "@turf/boolean-point-in-polygon": "^7.3.4",
     "@fastify/cookie": "^9.4.0",
     "@fastify/cors": "^9.0.0",
     "@fastify/formbody": "^7",

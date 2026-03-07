@@ -232,6 +232,34 @@ export default function TerritoriesPage() {
                 {creating ? 'Creating…' : 'Create'}
               </Button>
             </div>
+
+            <div className="mt-6 border-t border-border pt-4">
+              <div className="text-xs font-medium text-mutedForeground mb-2">Cluster generation</div>
+              <details className="border-b border-border/60 pb-2">
+                <summary className="cursor-pointer text-sm font-medium text-foreground py-1">
+                  What each setting does
+                </summary>
+                <div className="mt-2 text-sm text-mutedForeground space-y-2 pl-2">
+                  <p><strong>Name:</strong> Label for this cluster set (e.g. &quot;Hendricks - Door-to-door&quot;).</p>
+                  <p><strong>County:</strong> Geographic area; only properties in this county are included.</p>
+                  <p><strong>Radius (m):</strong> DBScan radius in meters; how close properties must be to be grouped into one cluster (larger = fewer, bigger clusters).</p>
+                  <p><strong>Min houses:</strong> Minimum number of properties required to form a cluster (smaller clusters are discarded).</p>
+                  <p><strong>Value min / Value max:</strong> Filter properties by estimated value; only properties in this range are clustered.</p>
+                  <p><strong>Exclude DNK:</strong> Exclude properties marked &quot;Do Not Knock&quot; (from prior knock outcomes).</p>
+                  <p><strong>Only unworked:</strong> Include only properties that have not been worked yet (no prior knock).</p>
+                </div>
+              </details>
+              <details className="border-b border-border/60 pb-2 mt-2">
+                <summary className="cursor-pointer text-sm font-medium text-foreground py-1">
+                  Strategies for better clusters
+                </summary>
+                <div className="mt-2 text-sm text-mutedForeground space-y-2 pl-2">
+                  <p>Use radius and min houses together: larger radius + higher min houses for fewer, denser territories; smaller radius for more, tighter clusters.</p>
+                  <p>Narrow value range to focus on a specific segment (e.g. mid-tier homes).</p>
+                  <p>Use &quot;Only unworked&quot; when building fresh routes; use &quot;Exclude DNK&quot; to respect resident preferences.</p>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
 

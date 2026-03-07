@@ -57,6 +57,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.45.4
         version: 2.93.3
+      '@turf/bbox':
+        specifier: ^7.3.4
+        version: 7.3.4
+      '@turf/boolean-point-in-polygon':
+        specifier: ^7.3.4
+        version: 7.3.4
       csv-parse:
         specifier: ^6.1.0
         version: 6.1.0

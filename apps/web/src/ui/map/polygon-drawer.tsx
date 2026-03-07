@@ -8,9 +8,12 @@ type LngLat = [number, number];
 
 export function PolygonDrawer({
   onSave,
+  onAddZone,
   className
 }: {
   onSave?: (geojson: GeoJSON.Polygon) => void | Promise<void>;
+  /** When set, "Add zone" adds the current polygon and clears for the next; use with page-level "Save cluster set". */
+  onAddZone?: (geojson: GeoJSON.Polygon) => void;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -114,6 +117,14 @@ export function PolygonDrawer({
     setMessage(null);
   }, []);
 
+  const handleAddZone = useCallback(() => {
+    if (!polygonFeature?.geometry || polygonFeature.geometry.type !== 'Polygon' || !onAddZone) return;
+    onAddZone(polygonFeature.geometry);
+    setPoints([]);
+    setClosed(false);
+    setMessage(null);
+  }, [polygonFeature, onAddZone]);
+
   const handleSave = useCallback(async () => {
     if (!polygonFeature?.geometry || polygonFeature.geometry.type !== 'Polygon') return;
     if (!onSave) return;
@@ -151,7 +162,16 @@ export function PolygonDrawer({
         >
           Clear
         </button>
-        {closed && polygonFeature && onSave && (
+        {closed && polygonFeature && onAddZone && (
+          <button
+            type="button"
+            onClick={handleAddZone}
+            className="rounded-xl border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:opacity-90"
+          >
+            Add zone
+          </button>
+        )}
+        {closed && polygonFeature && onSave && !onAddZone && (
           <button
             type="button"
             onClick={handleSave}
