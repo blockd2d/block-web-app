@@ -85,7 +85,7 @@ async function main() {
     createUser(laborEmail, password)
   ]);
 
-  // Profiles (Auth -> org role mapping)
+  // Profiles (Auth -> org role mapping). Upsert so we repair or create even if a trigger already inserted a row.
   const profiles = [
     { id: adminUser.id, org_id: org.id, role: 'admin', name: 'Dev Admin', email: adminEmail },
     { id: managerUser.id, org_id: org.id, role: 'manager', name: 'Dev Manager', email: managerEmail },
@@ -94,7 +94,7 @@ async function main() {
     { id: jamisonUser.id, org_id: org.id, role: 'rep', name: 'Jamison Blair', email: jamisonEmail },
     { id: laborUser.id, org_id: org.id, role: 'labor', name: 'Dev Labor', email: laborEmail }
   ];
-  const { error: profErr } = await sb.from('profiles').insert(profiles);
+  const { error: profErr } = await sb.from('profiles').upsert(profiles, { onConflict: 'id' });
   if (profErr) throw profErr;
 
   // Reps (named, business-context)

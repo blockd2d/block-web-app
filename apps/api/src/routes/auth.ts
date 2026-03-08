@@ -40,13 +40,54 @@ export async function authRoutes(app: FastifyInstance) {
 
     // load profile to return role/org
     const service = createServiceClient();
-    const { data: profile } = await service
+    let profile = (await service
       .from('profiles')
       .select('id, org_id, role, name, email')
       .eq('id', data.user.id)
-      .single();
+      .single()).data;
 
-    if (!profile) return reply.code(403).send({ error: 'No org profile' });
+    // If no profile (e.g. seed created auth user but profile insert failed or was skipped), try to repair from laborers/reps
+    if (!profile) {
+      const userId = data.user.id;
+      const email = (data.user.email as string) ?? body.email ?? '';
+
+      const { data: laborer } = await service
+        .from('laborers')
+        .select('id, org_id, name')
+        .eq('profile_id', userId)
+        .limit(1)
+        .single();
+
+      if (laborer) {
+        const { error: upsertErr } = await service.from('profiles').upsert(
+          { id: userId, org_id: laborer.org_id, role: 'labor', name: laborer.name ?? 'Labor', email },
+          { onConflict: 'id' }
+        );
+        if (!upsertErr) {
+          profile = { id: userId, org_id: laborer.org_id, role: 'labor' as const, name: laborer.name ?? 'Labor', email };
+        }
+      }
+
+      if (!profile) {
+        const { data: rep } = await service
+          .from('reps')
+          .select('id, org_id, name')
+          .eq('profile_id', userId)
+          .limit(1)
+          .single();
+        if (rep) {
+          const { error: upsertErr } = await service.from('profiles').upsert(
+            { id: userId, org_id: rep.org_id, role: 'rep', name: rep.name ?? 'Rep', email },
+            { onConflict: 'id' }
+          );
+          if (!upsertErr) {
+            profile = { id: userId, org_id: rep.org_id, role: 'rep' as const, name: rep.name ?? 'Rep', email };
+          }
+        }
+      }
+
+      if (!profile) return reply.code(403).send({ error: 'No org profile' });
+    }
 
 
     // Enforce platform access:

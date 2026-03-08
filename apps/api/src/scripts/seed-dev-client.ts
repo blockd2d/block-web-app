@@ -135,7 +135,7 @@ async function main() {
       email: user.email
     });
   }
-  const { error: profErr } = await sb.from('profiles').insert(profiles);
+  const { error: profErr } = await sb.from('profiles').upsert(profiles, { onConflict: 'id' });
   if (profErr) throw profErr;
 
   const { error: repErr } = await sb.from('reps').insert({
