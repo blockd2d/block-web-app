@@ -4,8 +4,6 @@
   },
   "build": {
     "base": {
-      "node": "20.18.0",
-      "corepack": true,
       "env": {
         "EXPO_PACKAGE_MANAGER": "pnpm"
       }
