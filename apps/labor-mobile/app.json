@@ -12,10 +12,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.blockv7.labor"
+      "bundleIdentifier": "com.blockv7.labor",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,6 +28,11 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.blockv7.labor"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a02d612f-0dcd-4a10-a0c9-3361b8b997cb"
+      }
     }
   }
 }
