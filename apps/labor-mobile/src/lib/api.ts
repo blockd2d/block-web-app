@@ -1,8 +1,33 @@
 import { api, isApiError } from "./apiClient";
 import type { JobListItem, JobDetail } from "../types/job";
 import type { ChecklistItem } from "../types/checklist";
+import { isMockMode } from "../state/auth";
+import {
+  MOCK_JOBS_TODAY,
+  MOCK_JOBS_UPCOMING,
+  MOCK_JOBS_COMPLETED,
+  MOCK_JOB_DETAILS,
+  MOCK_CHECKLIST_TEMPLATE,
+  getMockChecklistResponses,
+  setMockChecklistResponse,
+  getMockClockState,
+  setMockClockIn,
+  setMockClockOut,
+  getMockJobStatusOverride,
+  setMockJobStatusOverride,
+  addMockJobNote,
+  addMockJobIssue
+} from "./mock";
 
 const LABOR_JOBS_PATH = "/v1/labor/jobs";
+
+function applyMockStatusOverrides<T extends { id: string; status: string }>(items: T[]): T[] {
+  return items.map((item) => {
+    const override = getMockJobStatusOverride(item.id);
+    if (override != null) return { ...item, status: override } as T;
+    return item;
+  });
+}
 
 /** API job row (snake_case from backend). */
 type ApiJob = Record<string, unknown> & {
@@ -111,6 +136,9 @@ function normalizeJobDetail(res: ApiJobDetailResponse): JobDetail {
  * Fetch jobs for the current labor user (GET /v1/labor/jobs). Filter client-side by date.
  */
 export async function fetchTodayJobs(): Promise<JobListItem[]> {
+  if (isMockMode()) {
+    return applyMockStatusOverrides([...MOCK_JOBS_TODAY]);
+  }
   const data = (await api.get(LABOR_JOBS_PATH)) as { jobs?: ApiJob[] };
   const jobs = data?.jobs ?? [];
   const today = new Date().toISOString().slice(0, 10);
@@ -131,6 +159,9 @@ export async function fetchTodayJobs(): Promise<JobListItem[]> {
  * Fetch upcoming jobs (future dates). Same list, filter client-side.
  */
 export async function fetchUpcomingJobs(): Promise<JobListItem[]> {
+  if (isMockMode()) {
+    return applyMockStatusOverrides([...MOCK_JOBS_UPCOMING]);
+  }
   const data = (await api.get(LABOR_JOBS_PATH)) as { jobs?: ApiJob[] };
   const jobs = data?.jobs ?? [];
   const now = new Date().toISOString();
@@ -149,6 +180,9 @@ export async function fetchUpcomingJobs(): Promise<JobListItem[]> {
  * Fetch completed jobs (recent). Same list, filter by completed_at.
  */
 export async function fetchCompletedJobs(): Promise<JobListItem[]> {
+  if (isMockMode()) {
+    return applyMockStatusOverrides([...MOCK_JOBS_COMPLETED]);
+  }
   const data = (await api.get(LABOR_JOBS_PATH)) as { jobs?: ApiJob[] };
   const jobs = data?.jobs ?? [];
   return jobs
@@ -166,6 +200,13 @@ export async function fetchCompletedJobs(): Promise<JobListItem[]> {
  * Fetch single job detail by id (GET /v1/jobs/:id). Returns job + sale + property + job_photos.
  */
 export async function fetchJobDetail(jobId: string): Promise<JobDetail | null> {
+  if (isMockMode()) {
+    const detail = MOCK_JOB_DETAILS[jobId] ?? null;
+    if (!detail) return null;
+    const override = getMockJobStatusOverride(jobId);
+    if (override != null) return { ...detail, status: override };
+    return detail;
+  }
   try {
     const res = (await api.get(`/v1/jobs/${jobId}`)) as ApiJobDetailResponse;
     if (!res?.job) return null;
@@ -195,6 +236,10 @@ export async function updateJobStatus(
   jobId: string,
   status: (typeof LABOR_STATUSES)[number] | string
 ): Promise<void> {
+  if (isMockMode()) {
+    setMockJobStatusOverride(jobId, status as JobListItem["status"]);
+    return;
+  }
   if (status === "in_progress") {
     await api.post(`/v1/jobs/${jobId}/start`);
     return;
@@ -208,6 +253,9 @@ export async function updateJobStatus(
 
 // --- Checklist (placeholder: API may not exist yet) ---
 export async function fetchChecklistItems(): Promise<ChecklistItem[]> {
+  if (isMockMode()) {
+    return [...MOCK_CHECKLIST_TEMPLATE];
+  }
   try {
     const data = (await api.get("/v1/labor/checklist/items")) as { items?: ChecklistItem[] };
     return (data?.items ?? []).map((row) => ({
@@ -226,6 +274,9 @@ export async function fetchChecklistItems(): Promise<ChecklistItem[]> {
 }
 
 export async function fetchChecklistResponses(jobId: string): Promise<Record<string, boolean>> {
+  if (isMockMode()) {
+    return getMockChecklistResponses(jobId);
+  }
   try {
     const data = (await api.get(`/v1/jobs/${jobId}/checklist`)) as {
       responses?: Array<{ template_item_id: string; is_checked?: boolean }>;
@@ -246,6 +297,10 @@ export async function setChecklistResponse(
   isChecked: boolean,
   _userId: string
 ): Promise<void> {
+  if (isMockMode()) {
+    setMockChecklistResponse(jobId, templateItemId, isChecked);
+    return;
+  }
   await api.put(`/v1/jobs/${jobId}/checklist`, {
     template_item_id: templateItemId,
     is_checked: isChecked
@@ -259,6 +314,10 @@ export async function createJobNote(
   _authorUserId: string,
   noteType?: string
 ): Promise<void> {
+  if (isMockMode()) {
+    addMockJobNote(jobId, body);
+    return;
+  }
   await api.post(`/v1/jobs/${jobId}/notes`, { body, note_type: noteType ?? "general" });
 }
 
@@ -273,6 +332,10 @@ export async function createIssueReport(
     description?: string;
   }
 ): Promise<void> {
+  if (isMockMode()) {
+    addMockJobIssue(jobId, payload);
+    return;
+  }
   await api.post(`/v1/jobs/${jobId}/issues`, {
     issue_type: payload.issue_type,
     severity: payload.severity ?? "medium",
@@ -283,16 +346,27 @@ export async function createIssueReport(
 
 // --- Clock (placeholder) ---
 export async function clockIn(_userId: string, _crewId?: string): Promise<void> {
+  if (isMockMode()) {
+    setMockClockIn();
+    return;
+  }
   await api.post("/v1/labor/clock-in");
 }
 
 export async function clockOut(_userId: string, _crewId?: string): Promise<void> {
+  if (isMockMode()) {
+    setMockClockOut();
+    return;
+  }
   await api.post("/v1/labor/clock-out");
 }
 
 export async function getTodayShiftState(
   _userId: string
 ): Promise<{ clockedIn: boolean; lastEventAt: string | null }> {
+  if (isMockMode()) {
+    return getMockClockState();
+  }
   try {
     const data = (await api.get("/v1/labor/clock/today")) as {
       clocked_in?: boolean;

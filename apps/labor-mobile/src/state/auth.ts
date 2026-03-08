@@ -24,8 +24,20 @@ export type User = {
   org_name?: string | null;
 };
 
+export type AuthMode = "real" | "mock";
+
+/** Mock user for Mock View (session-only demo). PRD: Marcus Hill, Labor, Nova Crew A. */
+export const MOCK_USER: User = {
+  id: "mock-user-1",
+  name: "Marcus Hill",
+  email: "mock.labor@block.local",
+  role: "labor",
+  org_name: "Nova Crew A"
+};
+
 type AuthState = {
   status: AuthStatus;
+  authMode: AuthMode;
   accessToken: string | null;
   user: User | null;
   error: string | null;
@@ -33,10 +45,16 @@ type AuthState = {
 
   bootstrap(): Promise<void>;
   continueToLogin(): void;
+  enterMockView(): void;
+  exitMockView(): void;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
   setError(message: string | null): void;
 };
+
+export function isMockMode(): boolean {
+  return useAuthStore.getState().authMode === "mock";
+}
 
 async function loginWithApi(email: string, password: string): Promise<{
   user: User;
@@ -116,6 +134,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
   return {
     status: "idle",
+    authMode: "real",
     accessToken: null,
     user: null,
     error: null,
@@ -130,6 +149,28 @@ export const useAuthStore = create<AuthState>((set, get) => {
         user: null,
         error: null
       }),
+
+    enterMockView: () =>
+      set({
+        authMode: "mock",
+        status: "authenticated",
+        user: MOCK_USER,
+        accessToken: null,
+        error: null,
+        isLabor: true
+      }),
+
+    exitMockView: () => {
+      clearStoredTokens();
+      clearStoredSession();
+      set({
+        authMode: "real",
+        status: "unauthenticated",
+        accessToken: null,
+        user: null,
+        error: null
+      });
+    },
 
     bootstrap: async () => {
       set({ status: "loading", error: null });

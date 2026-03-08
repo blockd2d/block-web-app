@@ -67,6 +67,14 @@ export function LoginScreen() {
             onPress={handleSubmit}
             disabled={status === "loading"}
           />
+          <View style={styles.mockViewWrap}>
+            <Button
+              title="Mock View"
+              onPress={() => useAuthStore.getState().enterMockView()}
+              variant="secondary"
+              disabled={status === "loading"}
+            />
+          </View>
         </View>
       </ScreenContainer>
     </KeyboardAvoidingView>
@@ -101,5 +109,8 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     marginBottom: theme.space(2),
     fontSize: 14
+  },
+  mockViewWrap: {
+    marginTop: theme.space(2)
   }
 });

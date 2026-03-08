@@ -1,4 +1,6 @@
 import React from "react";
+import { View, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useAuthStore } from "./state/auth";
@@ -13,6 +15,7 @@ import { PhotoCaptureScreen } from "./screens/PhotoCaptureScreen";
 import { ClockScreen } from "./screens/ClockScreen";
 import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { ProfileScreen } from "./screens/ProfileScreen";
+import { MockViewBanner } from "./components/MockViewBanner";
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -43,6 +46,11 @@ function MainTabs() {
   );
 }
 
+const styles = StyleSheet.create({
+  mainWrap: { flex: 1, backgroundColor: theme.colors.bg },
+  tabsWrap: { flex: 1 }
+});
+
 export function RootNavigator() {
   const { status } = useAuthStore();
 
@@ -62,18 +70,24 @@ export function RootNavigator() {
     );
   }
 
+  const insets = useSafeAreaInsets();
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerTitleStyle: { fontWeight: "700" },
-        headerStyle: { backgroundColor: theme.colors.bg },
-        contentStyle: { backgroundColor: theme.colors.bg }
-      }}
-    >
-      <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: "Job" }} />
-      <Stack.Screen name="PhotoCapture" component={PhotoCaptureScreen} options={{ title: "Photos" }} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
-    </Stack.Navigator>
+    <View style={[styles.mainWrap, { paddingTop: insets.top }]}>
+      <MockViewBanner />
+      <View style={styles.tabsWrap}>
+        <Stack.Navigator
+          screenOptions={{
+            headerTitleStyle: { fontWeight: "700" },
+            headerStyle: { backgroundColor: theme.colors.bg },
+            contentStyle: { backgroundColor: theme.colors.bg }
+          }}
+        >
+          <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: "Job" }} />
+          <Stack.Screen name="PhotoCapture" component={PhotoCaptureScreen} options={{ title: "Photos" }} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: "Notifications" }} />
+        </Stack.Navigator>
+      </View>
+    </View>
   );
 }

@@ -1,6 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { api } from "./apiClient";
+import { isMockMode } from "../state/auth";
 
 export type PhotoLabel = "before" | "after" | "extra";
 
@@ -40,8 +41,11 @@ export async function uploadJobPhoto(
   label: PhotoLabel,
   _userId: string
 ): Promise<string> {
+  if (isMockMode()) {
+    return Promise.resolve("mock-uploaded");
+  }
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64
+    encoding: "base64"
   });
   const dataUrl = `data:image/jpeg;base64,${base64}`;
   const filename = `${Date.now()}-${label}.jpg`;

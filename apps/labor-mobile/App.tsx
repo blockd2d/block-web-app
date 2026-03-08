@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
@@ -34,23 +35,26 @@ export default function App() {
 
   const status = useAuthStore((s) => s.status);
   const userId = useAuthStore((s) => s.user?.id);
+  const authMode = useAuthStore((s) => s.authMode);
   useEffect(() => {
-    if (status === "authenticated" && userId) {
+    if (status === "authenticated" && userId && authMode !== "mock") {
       registerForPushNotifications(userId).catch(() => {});
     }
-  }, [status, userId]);
+  }, [status, userId, authMode]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-      <QueryClientProvider client={queryClient}>
-        <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-          <SyncBanner />
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
-          <StatusBar style="dark" />
-        </View>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+        <QueryClientProvider client={queryClient}>
+          <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+            {authMode !== "mock" ? <SyncBanner /> : null}
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+            <StatusBar style="dark" />
+          </View>
+        </QueryClientProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
