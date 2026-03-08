@@ -16,10 +16,14 @@ export async function authRoutes(app: FastifyInstance) {
     const ts = await verifyTurnstile({ token: body.turnstileToken, ip: req.ip, bypass });
     if (!ts.ok) return reply.code(400).send({ error: ts.error, details: ts.details });
 
+    // Normalize so Supabase lookup and comparison are reliable (whitespace/case can break login)
+    const email = String(body.email).trim().toLowerCase();
+    const password = String(body.password).trim();
+
     // Hardcoded dev account (no Supabase) so you can log in and see the app
     if (
-      body.email === DEV_ACCOUNT.email &&
-      body.password === DEV_ACCOUNT.password &&
+      email === DEV_ACCOUNT.email &&
+      password === DEV_ACCOUNT.password &&
       !isMobile
     ) {
       const devToken = `${DEV_ACCOUNT.sessionPrefix}${DEV_ACCOUNT.userId}`;
@@ -35,7 +39,7 @@ export async function authRoutes(app: FastifyInstance) {
     }
 
     const anon = createAnonClient();
-    const { data, error } = await anon.auth.signInWithPassword({ email: body.email, password: body.password });
+    const { data, error } = await anon.auth.signInWithPassword({ email, password });
     if (error || !data.session) return reply.code(401).send({ error: 'Invalid credentials' });
 
     // load profile to return role/org
@@ -49,7 +53,7 @@ export async function authRoutes(app: FastifyInstance) {
     // If no profile (e.g. seed created auth user but profile insert failed or was skipped), try to repair from laborers/reps
     if (!profile) {
       const userId = data.user.id;
-      const email = (data.user.email as string) ?? body.email ?? '';
+      const profileEmail = (data.user.email as string) ?? email ?? '';
 
       const { data: laborer } = await service
         .from('laborers')
@@ -60,11 +64,11 @@ export async function authRoutes(app: FastifyInstance) {
 
       if (laborer) {
         const { error: upsertErr } = await service.from('profiles').upsert(
-          { id: userId, org_id: laborer.org_id, role: 'labor', name: laborer.name ?? 'Labor', email },
+          { id: userId, org_id: laborer.org_id, role: 'labor', name: laborer.name ?? 'Labor', email: profileEmail },
           { onConflict: 'id' }
         );
         if (!upsertErr) {
-          profile = { id: userId, org_id: laborer.org_id, role: 'labor' as const, name: laborer.name ?? 'Labor', email };
+          profile = { id: userId, org_id: laborer.org_id, role: 'labor' as const, name: laborer.name ?? 'Labor', email: profileEmail };
         }
       }
 
@@ -77,11 +81,11 @@ export async function authRoutes(app: FastifyInstance) {
           .single();
         if (rep) {
           const { error: upsertErr } = await service.from('profiles').upsert(
-            { id: userId, org_id: rep.org_id, role: 'rep', name: rep.name ?? 'Rep', email },
+            { id: userId, org_id: rep.org_id, role: 'rep', name: rep.name ?? 'Rep', email: profileEmail },
             { onConflict: 'id' }
           );
           if (!upsertErr) {
-            profile = { id: userId, org_id: rep.org_id, role: 'rep' as const, name: rep.name ?? 'Rep', email };
+            profile = { id: userId, org_id: rep.org_id, role: 'rep' as const, name: rep.name ?? 'Rep', email: profileEmail };
           }
         }
       }
