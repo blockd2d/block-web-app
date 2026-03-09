@@ -46,6 +46,8 @@ export type Cluster = {
   assigned_rep_id?: string | null;
   color?: string | null;
   created_at?: string;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
 };
 
 export type Rep = {

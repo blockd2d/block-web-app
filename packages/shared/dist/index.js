@@ -8,7 +8,7 @@ var LoginSchema = z.object({
 });
 var InviteCreateSchema = z.object({
   email: z.string().email(),
-  role: RoleSchema.refine((r) => r === "admin" || r === "manager", { message: "invite role must be admin/manager" })
+  role: RoleSchema
 });
 var InviteAcceptSchema = z.object({
   token: z.string().min(10),
@@ -26,7 +26,7 @@ var ClusterSetCreateSchema = z.object({
   name: z.string().min(1).optional(),
   county_id: z.string().uuid(),
   filters: z.object({
-    radius_m: z.number().min(50).max(5e3).default(500),
+    radius_m: z.number().min(10).max(5e3).default(500),
     min_houses: z.number().min(3).max(500).default(12),
     value_min: z.number().optional(),
     value_max: z.number().optional(),

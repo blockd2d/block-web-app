@@ -43,6 +43,8 @@ type Cluster = {
     assigned_rep_id?: string | null;
     color?: string | null;
     created_at?: string;
+    scheduled_start?: string | null;
+    scheduled_end?: string | null;
 };
 type Rep = {
     id: string;
@@ -141,10 +143,10 @@ declare const LoginSchema: z.ZodObject<{
 }>;
 declare const InviteCreateSchema: z.ZodObject<{
     email: z.ZodString;
-    role: z.ZodEffects<z.ZodEnum<["admin", "manager", "rep", "labor"]>, "admin" | "manager", "admin" | "manager" | "rep" | "labor">;
+    role: z.ZodEnum<["admin", "manager", "rep", "labor"]>;
 }, "strip", z.ZodTypeAny, {
     email: string;
-    role: "admin" | "manager";
+    role: "admin" | "manager" | "rep" | "labor";
 }, {
     email: string;
     role: "admin" | "manager" | "rep" | "labor";

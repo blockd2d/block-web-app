@@ -39,7 +39,7 @@ export async function clustersRoutes(app: FastifyInstance) {
 
     let query = service
       .from('clusters')
-      .select('id,cluster_set_id,name,assigned_rep_id,center_lat,center_lng,hull_geojson,stats_json,color,created_at')
+      .select('id,cluster_set_id,name,assigned_rep_id,center_lat,center_lng,hull_geojson,stats_json,color,created_at,scheduled_start,scheduled_end')
       .eq('org_id', ctx.org_id)
       .eq('cluster_set_id', cluster_set_id)
       .order('created_at', { ascending: true })
@@ -133,22 +133,43 @@ export async function clustersRoutes(app: FastifyInstance) {
   app.patch('/:id', async (req, reply) => {
     const ctx = requireManager(req);
     const { id } = req.params as any;
-    const body = req.body as { name?: string | null };
+    const body = req.body as { name?: string | null; scheduled_start?: string | null; scheduled_end?: string | null };
     const name = body && 'name' in body ? (body.name === null || body.name === '' ? null : String(body.name).trim()) : undefined;
-    if (name === undefined) return reply.code(400).send({ error: 'name required (string or null)' });
+    let scheduled_start: string | null | undefined = body?.scheduled_start;
+    let scheduled_end: string | null | undefined = body?.scheduled_end;
+    if (scheduled_start !== undefined && scheduled_start !== null) {
+      const t = new Date(scheduled_start);
+      if (Number.isNaN(t.getTime())) return reply.code(400).send({ error: 'scheduled_start must be a valid ISO 8601 date string' });
+      scheduled_start = t.toISOString();
+    }
+    if (scheduled_end !== undefined && scheduled_end !== null) {
+      const t = new Date(scheduled_end);
+      if (Number.isNaN(t.getTime())) return reply.code(400).send({ error: 'scheduled_end must be a valid ISO 8601 date string' });
+      scheduled_end = t.toISOString();
+    }
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name || null;
+    if (scheduled_start !== undefined) updates.scheduled_start = scheduled_start;
+    if (scheduled_end !== undefined) updates.scheduled_end = scheduled_end;
+    if (Object.keys(updates).length === 0) return reply.code(400).send({ error: 'Provide at least one of name, scheduled_start, scheduled_end' });
     const service = createServiceClient();
     const { data, error } = await service
       .from('clusters')
-      .update({ name: name || null })
+      .update(updates)
       .eq('id', id)
       .eq('org_id', ctx.org_id)
-      .select('id,name,assigned_rep_id')
+      .select('id,name,assigned_rep_id,scheduled_start,scheduled_end')
       .single();
     if (error) {
       if (error.code === 'PGRST116') return reply.code(404).send({ error: 'Not found' });
       return reply.code(400).send({ error: error.message });
     }
-    return reply.send({ cluster: data });
+    const cluster = data && {
+      ...data,
+      scheduled_start: data.scheduled_start != null ? new Date(data.scheduled_start).toISOString() : null,
+      scheduled_end: data.scheduled_end != null ? new Date(data.scheduled_end).toISOString() : null
+    };
+    return reply.send({ cluster });
   });
 
   // Properties in a cluster

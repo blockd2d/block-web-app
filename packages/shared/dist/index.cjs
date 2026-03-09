@@ -49,7 +49,7 @@ var LoginSchema = import_zod.z.object({
 });
 var InviteCreateSchema = import_zod.z.object({
   email: import_zod.z.string().email(),
-  role: RoleSchema.refine((r) => r === "admin" || r === "manager", { message: "invite role must be admin/manager" })
+  role: RoleSchema
 });
 var InviteAcceptSchema = import_zod.z.object({
   token: import_zod.z.string().min(10),
@@ -67,7 +67,7 @@ var ClusterSetCreateSchema = import_zod.z.object({
   name: import_zod.z.string().min(1).optional(),
   county_id: import_zod.z.string().uuid(),
   filters: import_zod.z.object({
-    radius_m: import_zod.z.number().min(50).max(5e3).default(500),
+    radius_m: import_zod.z.number().min(10).max(5e3).default(500),
     min_houses: import_zod.z.number().min(3).max(500).default(12),
     value_min: import_zod.z.number().optional(),
     value_max: import_zod.z.number().optional(),

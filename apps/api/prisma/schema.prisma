@@ -70,6 +70,8 @@ model clusters {
   assigned_rep_id    String?              @db.Uuid
   color              String?
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  scheduled_start    DateTime?            @db.Timestamptz(6)
+  scheduled_end      DateTime?            @db.Timestamptz(6)
   cluster_properties cluster_properties[]
   reps               reps?                @relation(fields: [assigned_rep_id], references: [id], onUpdate: NoAction)
   cluster_sets       cluster_sets         @relation(fields: [cluster_set_id], references: [id], onDelete: Cascade, onUpdate: NoAction)

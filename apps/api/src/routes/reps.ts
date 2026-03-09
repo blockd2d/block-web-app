@@ -37,14 +37,19 @@ export async function repsRoutes(app: FastifyInstance) {
 
     const { data, error } = await service
       .from('clusters')
-      .select('id,cluster_set_id,center_lat,center_lng,hull_geojson,stats_json,color,assigned_rep_id,created_at')
+      .select('id,cluster_set_id,center_lat,center_lng,hull_geojson,stats_json,color,assigned_rep_id,created_at,scheduled_start,scheduled_end')
       .eq('org_id', ctx.org_id)
       .eq('assigned_rep_id', rep.id)
       .order('created_at', { ascending: false })
       .limit(5000);
 
     if (error) return reply.code(400).send({ error: error.message });
-    return reply.send({ clusters: data || [] });
+    const clusters = (data || []).map((c: any) => ({
+      ...c,
+      scheduled_start: c.scheduled_start != null ? new Date(c.scheduled_start).toISOString() : null,
+      scheduled_end: c.scheduled_end != null ? new Date(c.scheduled_end).toISOString() : null
+    }));
+    return reply.send({ clusters });
   });
 
   app.post('/me/location', async (req, reply) => {
