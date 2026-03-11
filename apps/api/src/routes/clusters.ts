@@ -103,9 +103,46 @@ export async function clustersRoutes(app: FastifyInstance) {
     return reply.send({ ok: true, updated: cluster_ids.length });
   });
 
+  // Must be registered before GET /:id so "scheduled" is not matched as a cluster id.
+  // List clusters that have a schedule (for Schedule page). Rep: only assigned; Manager: all in org.
+  app.get('/scheduled', async (req, reply) => {
+    const ctx = requireAnyAuthed(req);
+    if (ctx.role === 'labor') return reply.code(403).send({ error: 'Forbidden' });
+
+    const service = createServiceClient();
+    const limit = 500;
+
+    let query = service
+      .from('clusters')
+      .select('id,cluster_set_id,name,assigned_rep_id,scheduled_start,scheduled_end')
+      .eq('org_id', ctx.org_id)
+      .or('scheduled_start.not.is.null,scheduled_end.not.is.null')
+      .order('scheduled_start', { ascending: true, nullsFirst: false })
+      .limit(limit);
+
+    if (ctx.role === 'rep') {
+      const repId = await getRepIdForProfile(service, ctx.org_id, ctx.profile_id);
+      if (!repId) return reply.send({ clusters: [] });
+      query = query.eq('assigned_rep_id', repId);
+    }
+
+    const { data, error } = await query;
+    if (error) return reply.code(400).send({ error: error.message });
+
+    const clusters = (data || []).map((c: any) => ({
+      ...c,
+      scheduled_start: c.scheduled_start != null ? new Date(c.scheduled_start).toISOString() : null,
+      scheduled_end: c.scheduled_end != null ? new Date(c.scheduled_end).toISOString() : null
+    }));
+    return reply.send({ clusters });
+  });
+
   app.get('/:id', async (req, reply) => {
     const ctx = requireAnyAuthed(req);
     const { id } = req.params as any;
+    if (id === 'scheduled') {
+      return reply.code(400).send({ error: 'Use GET /v1/clusters/scheduled to list scheduled clusters.' });
+    }
     const service = createServiceClient();
 
     const { data: cluster, error } = await service

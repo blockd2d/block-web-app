@@ -122,6 +122,7 @@ Same routes are also mounted at `/v1/territories` for compatibility.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/v1/clusters` | List clusters (requires `cluster_set_id` query) |
+| GET | `/v1/clusters/scheduled` | List clusters that have a schedule (scheduled_start or scheduled_end set). For reps, only clusters assigned to the current rep. For managers, all such clusters in the org. |
 | POST | `/v1/clusters/assign` | Assign one cluster to rep |
 | POST | `/v1/clusters/assign-bulk` | Bulk assign clusters |
 | GET | `/v1/clusters/:id` | Get cluster |
