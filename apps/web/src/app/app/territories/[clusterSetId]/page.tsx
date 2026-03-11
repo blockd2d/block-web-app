@@ -9,7 +9,7 @@ import { Input } from '../../../../ui/input';
 import { api } from '../../../../lib/api';
 import { OpsMap } from '../../../../ui/map/ops-map';
 import { haversineKm } from '../../../../lib/geo';
-import { fmtNumber, fmtCurrency } from '../../../../lib/format';
+import { fmtNumber, fmtCurrency, fmtScheduleRange } from '../../../../lib/format';
 
 type Rep = {
   id: string;
@@ -26,6 +26,8 @@ type Cluster = {
   center_lat: number;
   center_lng: number;
   stats_json: { size?: number; total_potential?: number; avg_value?: number } | null;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
 };
 
 type Inspector = {
@@ -100,6 +102,10 @@ export default function TerritoryDetailPage() {
   const [editingClusterName, setEditingClusterName] = React.useState(false);
   const [clusterNameDraft, setClusterNameDraft] = React.useState('');
   const [savingClusterName, setSavingClusterName] = React.useState(false);
+  const [editingSchedule, setEditingSchedule] = React.useState(false);
+  const [scheduleStartDraft, setScheduleStartDraft] = React.useState('');
+  const [scheduleEndDraft, setScheduleEndDraft] = React.useState('');
+  const [savingSchedule, setSavingSchedule] = React.useState(false);
 
   const selectedCluster = clusters.find((c) => c.id === selectedClusterId) ?? null;
 
@@ -294,6 +300,109 @@ export default function TerritoryDetailPage() {
       }
     } finally {
       setSavingClusterName(false);
+    }
+  }
+
+  function toDatetimeLocal(iso?: string | null): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day}T${h}:${min}`;
+  }
+
+  async function saveSchedule() {
+    if (!selectedClusterId || !selectedCluster) return;
+    setSavingSchedule(true);
+    setNotice(null);
+    try {
+      const startVal = scheduleStartDraft.trim() || null;
+      const endVal = scheduleEndDraft.trim() || null;
+      if (startVal || endVal) {
+        if (!startVal || !endVal) {
+          setNotice('Set both start and end, or clear both.');
+          setSavingSchedule(false);
+          return;
+        }
+        const startDate = new Date(startVal);
+        const endDate = new Date(endVal);
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+          setNotice('Invalid date/time.');
+          setSavingSchedule(false);
+          return;
+        }
+        if (endDate.getTime() <= startDate.getTime()) {
+          setNotice('End must be after start.');
+          setSavingSchedule(false);
+          return;
+        }
+      }
+      const scheduled_start = startVal ? new Date(startVal).toISOString() : null;
+      const scheduled_end = endVal ? new Date(endVal).toISOString() : null;
+      await api(`/v1/clusters/${selectedClusterId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ scheduled_start, scheduled_end })
+      });
+      setClusters((prev) =>
+        prev.map((c) =>
+          c.id === selectedClusterId ? { ...c, scheduled_start, scheduled_end } : c
+        )
+      );
+      if (inspector?.cluster) {
+        setInspector({
+          ...inspector,
+          cluster: { ...inspector.cluster, scheduled_start, scheduled_end }
+        });
+      }
+      setEditingSchedule(false);
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      setNotice(msg === 'Not found' ? 'Cluster not found or already deleted.' : (msg || 'Failed to update schedule'));
+      if (msg === 'Not found') {
+        setInspector(null);
+        setSelectedClusterId(null);
+      }
+    } finally {
+      setSavingSchedule(false);
+    }
+  }
+
+  function clearSchedule() {
+    setScheduleStartDraft('');
+    setScheduleEndDraft('');
+  }
+
+  async function clearScheduleAndSave() {
+    if (!selectedClusterId || !selectedCluster) return;
+    setSavingSchedule(true);
+    setNotice(null);
+    try {
+      await api(`/v1/clusters/${selectedClusterId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ scheduled_start: null, scheduled_end: null })
+      });
+      setClusters((prev) =>
+        prev.map((c) =>
+          c.id === selectedClusterId ? { ...c, scheduled_start: null, scheduled_end: null } : c
+        )
+      );
+      if (inspector?.cluster) {
+        setInspector({
+          ...inspector,
+          cluster: { ...inspector.cluster, scheduled_start: null, scheduled_end: null }
+        });
+      }
+      setEditingSchedule(false);
+      clearSchedule();
+    } catch (e: any) {
+      const msg = e?.message ?? '';
+      setNotice(msg === 'Not found' ? 'Cluster not found or already deleted.' : (msg || 'Failed to clear schedule'));
+    } finally {
+      setSavingSchedule(false);
     }
   }
 
@@ -572,6 +681,68 @@ export default function TerritoryDetailPage() {
                   </select>
                 </div>
               </div>
+
+              <div className="rounded-xl border border-border bg-background/50 p-3">
+                <div className="text-xs text-mutedForeground">Schedule</div>
+                {editingSchedule ? (
+                  <div className="mt-2 space-y-2">
+                    <div>
+                      <label className="text-xs text-mutedForeground">Scheduled start</label>
+                      <Input
+                        type="datetime-local"
+                        value={scheduleStartDraft}
+                        onChange={(e) => setScheduleStartDraft(e.target.value)}
+                        className="mt-1 h-9 text-sm"
+                        disabled={savingSchedule}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-mutedForeground">Scheduled end</label>
+                      <Input
+                        type="datetime-local"
+                        value={scheduleEndDraft}
+                        onChange={(e) => setScheduleEndDraft(e.target.value)}
+                        className="mt-1 h-9 text-sm"
+                        disabled={savingSchedule}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" onClick={saveSchedule} disabled={savingSchedule}>
+                        {savingSchedule ? 'Saving…' : 'Save'}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => { setEditingSchedule(false); clearSchedule(); }} disabled={savingSchedule}>
+                        Cancel
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={clearScheduleAndSave} disabled={savingSchedule}>
+                        Clear schedule
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className={fmtScheduleRange(selectedCluster.scheduled_start, selectedCluster.scheduled_end) === 'Unscheduled' ? 'text-mutedForeground' : ''}>
+                      {fmtScheduleRange(selectedCluster.scheduled_start, selectedCluster.scheduled_end)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScheduleStartDraft(toDatetimeLocal(selectedCluster.scheduled_start));
+                        setScheduleEndDraft(toDatetimeLocal(selectedCluster.scheduled_end));
+                        setEditingSchedule(true);
+                      }}
+                      className="rounded p-0.5 text-mutedForeground hover:bg-muted hover:text-foreground"
+                      aria-label="Edit schedule"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    {fmtScheduleRange(selectedCluster.scheduled_start, selectedCluster.scheduled_end) === 'Unscheduled' && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setScheduleStartDraft(''); setScheduleEndDraft(''); setEditingSchedule(true); }}>
+                        Set schedule
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-4 text-sm text-mutedForeground">Loading…</div>
@@ -622,6 +793,7 @@ export default function TerritoryDetailPage() {
                 <th className="p-2 text-left">Houses</th>
                 <th className="p-2 text-left">Potential</th>
                 <th className="p-2 text-left">Assigned</th>
+                <th className="p-2 text-left">Scheduled</th>
                 <th className="p-2 text-left">Nearest rep</th>
                 <th className="p-2 text-left">Distance</th>
                 <th className="p-2 text-left">Suggested</th>
@@ -652,6 +824,9 @@ export default function TerritoryDetailPage() {
                     <td className="p-2">{fmtNumber(c.stats_json?.size ?? 0)}</td>
                     <td className="p-2">{fmtCurrency(c.stats_json?.total_potential ?? 0)}</td>
                     <td className="p-2">{repName(reps, c.assigned_rep_id)}</td>
+                    <td className={`p-2 ${fmtScheduleRange(c.scheduled_start, c.scheduled_end) === 'Unscheduled' ? 'text-mutedForeground' : ''}`}>
+                      {fmtScheduleRange(c.scheduled_start, c.scheduled_end)}
+                    </td>
                     <td className="p-2">{n ? n.rep.name : '—'}</td>
                     <td className="p-2">{n ? `${n.d.toFixed(2)} km` : '—'}</td>
                     <td className="p-2">{s ? `${repName(reps, s.rep_id)} (${(s.distance_miles ?? s.distance_km ?? 0).toFixed(1)} mi)` : '—'}</td>

@@ -34,3 +34,15 @@ export function fmtDateTimeLocal(value?: string | Date | null) {
   });
 }
 
+export function fmtScheduleRange(
+  start?: string | null,
+  end?: string | null
+): string {
+  if (start == null && end == null) return "Unscheduled";
+  const s = fmtDateTimeLocal(start);
+  const e = fmtDateTimeLocal(end);
+  if (!s && !e) return "Unscheduled";
+  if (s && e) return `${s} – ${e}`;
+  return s || e || "Unscheduled";
+}
+

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { api } from '../../../lib/api';
 import { useMe } from '../../../lib/use-me';
 import { Button } from '../../../ui/button';
+import { fmtScheduleRange } from '../../../lib/format';
 
 const OUTCOMES = [
   { value: 'not_home', label: 'Not home' },
@@ -15,7 +16,7 @@ const OUTCOMES = [
   { value: 'do_not_knock', label: 'DNK' }
 ] as const;
 
-type Cluster = { id: string; cluster_set_id: string; name?: string | null };
+type Cluster = { id: string; cluster_set_id: string; name?: string | null; scheduled_start?: string | null; scheduled_end?: string | null };
 type Property = { id: string; address1?: string | null; city?: string | null; state?: string | null; zip?: string | null };
 
 export default function KnocksPage() {
@@ -98,6 +99,13 @@ export default function KnocksPage() {
   const start = (page - 1) * pageSize;
   const paginatedProperties = properties.slice(start, start + pageSize);
 
+  function clusterOptionLabel(c: Cluster): string {
+    const name = (c.name && c.name.trim()) ? c.name.trim() : `Cluster ${c.id.slice(0, 8)}`;
+    const range = fmtScheduleRange(c.scheduled_start, c.scheduled_end);
+    if (range === 'Unscheduled') return name;
+    return `${name} — ${range}`;
+  }
+
   async function logOutcome(propertyId: string, outcome: string) {
     setLogging(propertyId);
     setErr(null);
@@ -170,7 +178,7 @@ export default function KnocksPage() {
                 <option value="">Select cluster</option>
                 {clusters.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {(c.name && c.name.trim()) ? c.name.trim() : `Cluster ${c.id.slice(0, 8)}`}
+                    {clusterOptionLabel(c)}
                   </option>
                 ))}
               </select>
@@ -189,7 +197,7 @@ export default function KnocksPage() {
           >
             {clusters.map((c) => (
               <option key={c.id} value={c.id}>
-                {(c.name && c.name.trim()) ? c.name.trim() : `Cluster ${c.id.slice(0, 8)}`}
+                {clusterOptionLabel(c)}
               </option>
             ))}
           </select>

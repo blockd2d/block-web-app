@@ -14,6 +14,8 @@ type ClusterRow = {
   center_lng: number;
   hull_geojson: any | null;
   stats_json: any | null;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
 };
 
 type RepRow = {

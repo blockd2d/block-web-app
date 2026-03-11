@@ -125,7 +125,7 @@ Same routes are also mounted at `/v1/territories` for compatibility.
 | GET | `/v1/clusters/scheduled` | List clusters that have a schedule (scheduled_start or scheduled_end set). For reps, only clusters assigned to the current rep. For managers, all such clusters in the org. |
 | POST | `/v1/clusters/assign` | Assign one cluster to rep |
 | POST | `/v1/clusters/assign-bulk` | Bulk assign clusters |
-| GET | `/v1/clusters/:id` | Get cluster |
+| GET | `/v1/clusters/:id` | Get cluster. If `id` is the literal `scheduled`, returns 400 with a message to use GET /v1/clusters/scheduled. |
 | PATCH | `/v1/clusters/:id` | Update cluster (e.g. name, scheduled_start, scheduled_end) |
 | GET | `/v1/clusters/:id/properties` | Properties in cluster |
 | GET | `/v1/clusters/:id/inspector` | Cluster inspector payload (stats, drive-to, etc.) |
