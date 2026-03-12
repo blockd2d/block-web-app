@@ -29,7 +29,15 @@ jobs:
         with:
           node-version-file: package.json
           cache: pnpm
-
+      - name: Configure GitHub Packages auth
+        run: |
+          cat <<EOF > ~/.npmrc
+          @blockd2d:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
+          always-auth=true
+          EOF
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
