@@ -17,7 +17,12 @@ export function PosthogInit() {
         api_host: host,
         capture_pageview: false,
         capture_pageleave: true,
-        autocapture: true
+        autocapture: true,
+        loaded: (ph) => {
+          if (typeof window !== 'undefined') {
+            (window as any).posthog = ph;
+          }
+        }
       });
     } catch {
       // noop
