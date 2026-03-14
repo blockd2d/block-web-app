@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Nova Sales",
+    "slug": "nova-sales",
+    "scheme": "novasales",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.novaservices.sales",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Nova Sales uses your location to show your position while walking a cluster route."
+      }
+    },
+    "android": {
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.novaservices.sales"
+    },
+    "plugins": [
+      [
+        "@rnmapbox/maps",
+        {
+          "mapboxAccessToken": "YOUR_TOKEN"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Nova Sales uses your location to show your position while walking a cluster route."
+        }
+      ]
+    ]
+  }
+}

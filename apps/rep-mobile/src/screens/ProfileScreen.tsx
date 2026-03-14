@@ -1,70 +1,71 @@
-import React, { useCallback } from 'react';
-import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useAuthStore, useRepStore } from '../store';
-import { blockApi } from '../services/blockApi';
-import { phCapture, phReset } from '../analytics/posthog';
+import React from "react";
+import { Text, View } from "react-native";
+import { Banner, Button, Card, ScrollScreen, ScreenHeader } from "../components";
+import { useQueueStore, useSessionStore, useUIStore } from "../state";
+import { formatDateTime } from "../lib/format";
+import { theme } from "../theme";
 
-const ProfileScreen: React.FC<any> = () => {
-  const { user, logout } = useAuthStore();
-  const { rep } = useRepStore();
+export function ProfileScreen() {
+  const session = useSessionStore();
+  const ui = useUIStore();
+  const queue = useQueueStore();
 
-  const onLogout = useCallback(async () => {
-    try {
-      await blockApi.post('/v1/auth/logout', {});
-    } catch {
-      // ignore
-    } finally {
-      phCapture('rep_logout');
-      phReset();
-      logout();
-    }
-  }, [logout]);
-
-  const openSupport = useCallback(async () => {
-    try {
-      await Linking.openURL('mailto:support@useblock.ai?subject=Block%20Rep%20Support');
-    } catch {
-      Alert.alert('Unable to open mail app');
-    }
-  }, []);
+  const pendingCount = queue.items.length;
+  const failedCount = queue.items.filter((i) => i.lastError).length;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <View style={styles.card}>
-        <Text style={styles.kicker}>Signed in as</Text>
-        <Text style={styles.value}>{user?.email || 'Unknown'}</Text>
-        <Text style={styles.kicker}>Role</Text>
-        <Text style={styles.value}>{user?.role || 'rep'}</Text>
-        <Text style={styles.kicker}>Rep</Text>
-        <Text style={styles.value}>{rep?.name || '—'}</Text>
-        <Text style={styles.kicker}>Home Base</Text>
-        <Text style={styles.value}>
-          {rep?.home_lat != null && rep?.home_lng != null ? `${rep.home_lat.toFixed(5)}, ${rep.home_lng.toFixed(5)}` : 'Not set'}
+    <ScrollScreen>
+      {!ui.isOnline && <Banner tone="warning" text="Offline: knocks/quotes will sync when online." />}
+      {!!queue.lastFlushError && <Banner tone="danger" text={`Sync error: ${queue.lastFlushError}`} />}
+
+      <ScreenHeader title="Profile" subtitle={session.me ? session.me.org.name : ""} />
+
+      <Card style={{ marginBottom: theme.space(2) }}>
+        <Text style={{ fontWeight: "900", color: theme.colors.text }}>Account</Text>
+
+        <Text style={{ marginTop: 10, color: theme.colors.muted, fontWeight: "800" }}>Name</Text>
+        <Text style={{ color: theme.colors.text, fontWeight: "900", marginTop: 4 }}>{session.me?.fullName ?? "—"}</Text>
+
+        <Text style={{ marginTop: 10, color: theme.colors.muted, fontWeight: "800" }}>Email</Text>
+        <Text style={{ color: theme.colors.text, fontWeight: "900", marginTop: 4 }}>{session.me?.user.email ?? "—"}</Text>
+
+        <Text style={{ marginTop: 10, color: theme.colors.muted, fontWeight: "800" }}>Role</Text>
+        <Text style={{ color: theme.colors.text, fontWeight: "900", marginTop: 4 }}>{session.me?.role ?? "—"}</Text>
+
+        <View style={{ marginTop: theme.space(2) }}>
+          <Button title="Log out" variant="secondary" onPress={() => session.logout()} />
+        </View>
+      </Card>
+
+      <Card style={{ marginBottom: theme.space(2) }}>
+        <Text style={{ fontWeight: "900", color: theme.colors.text }}>Sync</Text>
+        <Text style={{ marginTop: 10, color: theme.colors.muted }}>Pending queue: {pendingCount}</Text>
+        <Text style={{ marginTop: 4, color: theme.colors.muted }}>Failed items: {failedCount}</Text>
+        <Text style={{ marginTop: 10, color: theme.colors.muted }}>
+          Last successful sync: {formatDateTime(queue.lastSuccessfulFlushAt ? new Date(queue.lastSuccessfulFlushAt).toISOString() : null)}
         </Text>
-      </View>
+        <Text style={{ marginTop: 4, color: theme.colors.muted }}>
+          Last sync attempt: {formatDateTime(queue.lastFlushAt ? new Date(queue.lastFlushAt).toISOString() : null)}
+        </Text>
+        <Text style={{ marginTop: 10, color: theme.colors.muted }}>
+          Sync runs automatically on reconnect, foreground, and periodic best-effort while active.
+        </Text>
+        <View style={{ marginTop: theme.space(2) }}>
+          <Button title={queue.flushing ? "Syncing…" : "Sync now"} onPress={() => queue.flush("manual")} disabled={!ui.isOnline || queue.flushing || pendingCount === 0} />
+        </View>
+      </Card>
 
-      <TouchableOpacity style={styles.secondary} onPress={openSupport}>
-        <Text style={styles.secondaryText}>Contact Support</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.logout} onPress={onLogout}>
-        <Text style={styles.logoutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
+      {__DEV__ ? (
+        <Card>
+          <Text style={{ fontWeight: "900", color: theme.colors.text }}>Dev</Text>
+          <Text style={{ marginTop: 10, color: theme.colors.muted }}>
+            Online: {String(ui.isOnline)}
+          </Text>
+          <Text style={{ marginTop: 4, color: theme.colors.muted }}>
+            Queue flushing: {String(queue.flushing)}
+          </Text>
+        </Card>
+      ) : null}
+    </ScrollScreen>
   );
-};
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  title: { fontSize: 22, fontWeight: '900', color: '#111', marginBottom: 12 },
-  card: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 14 },
-  kicker: { marginTop: 10, color: '#6b7280', fontWeight: '800', fontSize: 12, textTransform: 'uppercase' },
-  value: { marginTop: 4, fontWeight: '900', color: '#111' },
-  logout: { marginTop: 'auto', backgroundColor: '#111827', padding: 14, borderRadius: 16, alignItems: 'center' },
-  logoutText: { color: '#fff', fontWeight: '900' },
-  secondary: { marginTop: 12, backgroundColor: '#f3f4f6', padding: 14, borderRadius: 16, alignItems: 'center' },
-  secondaryText: { color: '#111', fontWeight: '900' }
-});
-
-export default ProfileScreen;
+}
