@@ -28,7 +28,7 @@ export function OfflineIndicator() {
       aria-live="polite"
     >
       <WifiOff className="h-4 w-4 shrink-0" />
-      <span>You're offline. Some features may be unavailable until connection is restored.</span>
+      <span>You&apos;re offline. Some features may be unavailable until connection is restored.</span>
     </div>
   );
 }
