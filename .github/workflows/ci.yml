@@ -17,6 +17,8 @@ jobs:
   repo-quality:
     name: repo-quality
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -36,8 +38,6 @@ jobs:
           //npm.pkg.github.com/:_authToken=${NPM_TOKEN}
           always-auth=true
           EOF
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
