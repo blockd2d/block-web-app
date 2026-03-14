@@ -16,3 +16,4 @@ coverage
 *.tsbuildinfo
 *.log
 apps/api/hendricks.csv
+/.cursor
