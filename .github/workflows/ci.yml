@@ -21,13 +21,13 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
@@ -55,13 +55,13 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
@@ -81,13 +81,13 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
@@ -107,13 +107,13 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
@@ -133,13 +133,13 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: pnpm
@@ -147,6 +147,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint labor app
+      - name: Typecheck labor app
         working-directory: apps/labor-mobile
-        run: pnpm lint
+        run: pnpm typecheck
