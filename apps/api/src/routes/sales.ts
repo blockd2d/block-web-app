@@ -66,6 +66,7 @@ export async function salesRoutes(app: FastifyInstance) {
    * - date_from, date_to (ISO or YYYY-MM-DD)
    * - rep_id (admin/manager only)
    * - status (single) or statuses (comma-separated)
+   * - property_id (filter by property, for mobile quote list)
    * - q (search across customer name/phone/email/address)
    */
   app.get('/', async (req, reply) => {
@@ -107,6 +108,7 @@ export async function salesRoutes(app: FastifyInstance) {
       .filter(Boolean);
     const search = q.q ? sanitizeLike(String(q.q)).slice(0, 120) : '';
     const repFilter = ctx.role !== 'rep' && q.rep_id ? String(q.rep_id) : null;
+    const propertyId = q.property_id ? String(q.property_id).trim() : null;
 
     let query = service
       .from('sales_view')
@@ -119,6 +121,7 @@ export async function salesRoutes(app: FastifyInstance) {
     if (until) query = query.lte('created_at', until.toISOString());
     if (ctx.role === 'rep') query = query.eq('rep_id', repId!);
     else if (repFilter) query = query.eq('rep_id', repFilter);
+    if (propertyId) query = query.eq('property_id', propertyId);
     if (statuses.length === 1) query = query.eq('pipeline_status', statuses[0]);
     if (statuses.length > 1) query = query.in('pipeline_status', statuses);
     if (search) {
@@ -142,6 +145,7 @@ export async function salesRoutes(app: FastifyInstance) {
       if (until) fallback = fallback.lte('created_at', until.toISOString());
       if (ctx.role === 'rep') fallback = fallback.eq('rep_id', repId!);
       else if (repFilter) fallback = fallback.eq('rep_id', repFilter);
+      if (propertyId) fallback = fallback.eq('property_id', propertyId);
       if (statuses.length === 1) fallback = fallback.eq('status', statuses[0]);
       if (statuses.length > 1) fallback = fallback.in('status', statuses);
       if (search) {
