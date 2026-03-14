@@ -109,3 +109,5 @@ This document summarizes what Block is, how the repo is structured, and key conc
 - Supabase client in API/worker is from `createServiceClient()` (service role).
 - Web uses `api` helper from `lib/api.ts`; throws `ApiError` with `status` and `data` for non-2xx.
 - Cluster set list default limit 2000, max 5000; territory detail page requests `limit=5000` so all clusters for a set are shown.
+
+- Test Commit - Ignore
