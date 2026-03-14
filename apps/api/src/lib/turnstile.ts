@@ -13,7 +13,10 @@ export async function verifyTurnstile(opts: { token?: string | null; ip?: string
 
   const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
-    body: form
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: form.toString(),
   });
   const json: any = await res.json();
   if (json.success) return { ok: true };
